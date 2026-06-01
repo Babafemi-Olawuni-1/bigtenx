@@ -1,0 +1,45 @@
+/* Global reset and layout for sticky footer */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: 'Sora', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: flex;
+  flex-direction: column;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.page-content {
+  flex: 1 0 auto;
+  overflow-y: auto;
+}
+
+.bottom-nav {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html { scroll-behavior: smooth; }
