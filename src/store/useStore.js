@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 
-// Use sessionStorage so the user is logged out when the browser/tab is closed
 const useStore = create(
   persist(
     (set) => ({
@@ -10,18 +9,25 @@ const useStore = create(
       activeTab: 'home',
 
       setUser: (user) => set({ user }),
-      updateUser: (updates) => set((state) => ({
-        user: state.user ? { ...state.user, ...updates } : null,
-      })),
+
+      // Guard: skip the set if nothing actually changed
+      updateUser: (updates) => set((state) => {
+        if (!state.user) return state
+        // Check if any value is actually different before creating a new object
+        const hasChange = Object.keys(updates).some(
+          (k) => state.user[k] !== updates[k]
+        )
+        if (!hasChange) return state
+        return { user: { ...state.user, ...updates } }
+      }),
+
       setDarkMode: (darkMode) => set({ darkMode }),
       setActiveTab: (activeTab) => set({ activeTab }),
       logout: () => set({ user: null, activeTab: 'home' }),
     }),
     {
       name: 'bigtenx-session',
-      // sessionStorage clears automatically when the browser/tab is closed
       storage: createJSONStorage(() => sessionStorage),
-      // Only persist darkMode preference across sessions via a separate key
       partialize: (state) => ({
         user: state.user,
         darkMode: state.darkMode,

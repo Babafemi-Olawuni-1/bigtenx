@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { useDashboard } from '../dashboard/useDashboard'
 import { t, C } from '../dashboard/tokens'
@@ -150,20 +150,29 @@ export default function Dashboard({ user: initialUser, onLogout }) {
   const [showDeposit, setShowDeposit] = useState(false)
   const [showVirtualAccount, setShowVirtualAccount] = useState(false)
 
+  // Only merge initialUser into store once on mount — never again.
+  // Using a ref prevents updateUser (which changes identity each render) from
+  // being in the dep array, which was the root cause of the infinite loop.
+  const initialUserMerged = useRef(false)
   useEffect(() => {
-    if (initialUser) {
+    if (initialUser && !initialUserMerged.current) {
+      initialUserMerged.current = true
       updateUser(initialUser)
     }
     setLoading(false)
-  }, [initialUser, updateUser])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Fetch notifications once per user id — NOT on every updateUser reference change.
+  const notifFetched = useRef(null)
   useEffect(() => {
-    if (!user?.id) return
-    fetch(`${API}/notifications/index.php?user_id=${user.id}`)
+    const uid = user?.id
+    if (!uid || notifFetched.current === uid) return
+    notifFetched.current = uid
+    fetch(`${API}/notifications/index.php?user_id=${uid}`)
       .then(r => r.json())
       .then(data => { if (data.success) updateUser({ notifications: data.notifications }) })
       .catch(() => {})
-  }, [user?.id, updateUser])
+  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tk = t(darkMode)
   const openUpgrade = () => setShowUpgrade(true)
