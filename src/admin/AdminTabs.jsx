@@ -1,7 +1,81 @@
-import { Edit, Trash2, ToggleLeft, ToggleRight, Copy, Plus, RefreshCw, Zap, ArrowUpRight } from 'lucide-react'
-import { O, LEVEL_NAMES, LEVEL_COLORS, getTheme } from './adminUtils'
+import { useState } from 'react'
+import { Edit, Trash2, ToggleLeft, ToggleRight, Copy, Plus, RefreshCw, Zap, ArrowUpRight, ChevronDown, ChevronUp } from 'lucide-react'
+import { O, LEVEL_NAMES, LEVEL_COLORS, getTheme, API } from './adminUtils'
 import { Badge, StatCard, Toggle } from './AdminShared'
 import { Users, CheckSquare, TrendingUp, DollarSign, List } from 'lucide-react'
+
+// ── Individual codes panel ────────────────────────────────────────────────────
+function IndividualCodesPanel({ task, token, darkMode }) {
+  const [open,   setOpen]   = useState(false)
+  const [codes,  setCodes]  = useState([])
+  const [loaded, setLoaded] = useState(false)
+  const [copying, setCopying] = useState(false)
+  const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token }
+
+  const load = async () => {
+    if (loaded) { setOpen(o => !o); return }
+    try {
+      const r = await fetch(`${API}/admin/task_codes.php?task_id=${task.id}`, { headers })
+      const d = await r.json()
+      if (d.success) { setCodes(d.codes); setLoaded(true); setOpen(true) }
+    } catch {}
+  }
+
+  const copyAll = () => {
+    const text = codes.map(c => c.code).join('\n')
+    navigator.clipboard.writeText(text)
+    setCopying(true)
+    setTimeout(() => setCopying(false), 2000)
+  }
+
+  const used   = codes.filter(c => c.used_by).length
+  const unused = codes.length - used
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <button
+        type="button"
+        onClick={load}
+        style={{ display:'flex', alignItems:'center', gap:6, background:`${O}10`, border:`1px solid ${O}30`, borderRadius:8, padding:'4px 12px', color:O, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}
+      >
+        🎫 Codes ({task.individual_codes_count ?? '?'})
+        {open ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+      </button>
+
+      {open && (
+        <div style={{ marginTop:8, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:14 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
+            <span style={{ fontSize:11, color:'rgba(255,255,255,0.4)' }}>
+              {unused} unused / {used} used / {codes.length} total
+            </span>
+            <button type="button" onClick={copyAll} style={{ display:'flex', alignItems:'center', gap:5, background:`${O}15`, border:'none', borderRadius:8, padding:'4px 12px', color:O, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+              <Copy size={11}/> {copying ? 'Copied!' : 'Copy All'}
+            </button>
+          </div>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:6, maxHeight:200, overflowY:'auto' }}>
+            {codes.map(c => (
+              <span
+                key={c.id}
+                title={c.used_by ? `Used by: ${c.used_by_username}` : 'Available'}
+                style={{
+                  fontFamily:'monospace', fontSize:12, padding:'3px 10px', borderRadius:8,
+                  background: c.used_by ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                  color: c.used_by ? '#f87171' : '#10b981',
+                  border: `1px solid ${c.used_by ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`,
+                  textDecoration: c.used_by ? 'line-through' : 'none',
+                  cursor: 'pointer',
+                }}
+                onClick={() => navigator.clipboard.writeText(c.code)}
+              >
+                {c.code}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // ── Overview Tab ──────────────────────────────────────────────────────────────
 export function OverviewTab({ stats, savedRevenue, darkMode, onRefresh }) {
@@ -59,7 +133,7 @@ export function OverviewTab({ stats, savedRevenue, darkMode, onRefresh }) {
 }
 
 // ── Tasks Tab ─────────────────────────────────────────────────────────────────
-export function TasksTab({ tasks, darkMode, onNew, onEdit, onToggle, onDelete, onCopy }) {
+export function TasksTab({ tasks, darkMode, token, onNew, onEdit, onToggle, onDelete, onCopy }) {
   const tk = getTheme(darkMode)
   return (
     <div>
@@ -93,12 +167,17 @@ export function TasksTab({ tasks, darkMode, onNew, onEdit, onToggle, onDelete, o
                   <span style={{ fontSize:12, color:O, fontWeight:700 }}>
                     {task.reward_type === 'cash' ? `$${task.reward_xp}` : `${task.reward_xp} XP`}
                   </span>
-                  {task.verify_code && (
+                  {/* Universal code — click to copy */}
+                  {task.code_type === 'universal' && task.verify_code && (
                     <button onClick={() => onCopy(task.verify_code)} style={{ display:'flex', alignItems:'center', gap:4, background:`${O}12`, border:'none', borderRadius:8, padding:'2px 10px', color:O, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
                       <Copy size={11}/> {task.verify_code}
                     </button>
                   )}
                 </div>
+                {/* Individual codes expandable panel */}
+                {task.code_type === 'individual' && (
+                  <IndividualCodesPanel task={task} token={token} darkMode={darkMode}/>
+                )}
               </div>
               <div style={{ display:'flex', gap:8, flexShrink:0 }}>
                 <button onClick={() => onToggle(task.id)} title={task.active ? 'Pause' : 'Activate'} style={{ width:34, height:34, borderRadius:10, background: task.active ? `${O}15` : 'rgba(255,255,255,0.05)', border:`1px solid ${task.active ? `${O}30` : tk.border}`, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}>

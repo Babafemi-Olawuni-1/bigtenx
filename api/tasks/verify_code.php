@@ -20,14 +20,42 @@ if (!$userId || !$code) {
 $db = getDB();
 
 // ── Locate the task by verify_code ───────────────────────────────────────────
-$stmt = $db->prepare("
-    SELECT * FROM admin_tasks
-    WHERE verify_code = ?
-      AND active = 1
-    LIMIT 1
-");
+// Strategy:
+//   1. Try universal code → verify_code column in admin_tasks
+//   2. Try individual code → task_codes table
+
+$task = null;
+$codeSource = 'universal';
+
+// Check universal first
+$stmt = $db->prepare("SELECT * FROM admin_tasks WHERE verify_code = ? AND active = 1 LIMIT 1");
 $stmt->execute([$code]);
 $task = $stmt->fetch(PDO::FETCH_ASSOC);
+
+// If not found universally, check individual codes pool
+if (!$task) {
+    try {
+        $stmt = $db->prepare("
+            SELECT at.*, tc.id AS tc_id
+            FROM task_codes tc
+            JOIN admin_tasks at ON at.id = tc.task_id
+            WHERE tc.code = ?
+              AND tc.used_by IS NULL
+              AND at.active = 1
+            LIMIT 1
+        ");
+        $stmt->execute([$code]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row) {
+            $tcId       = $row['tc_id'];
+            unset($row['tc_id']);
+            $task       = $row;
+            $codeSource = 'individual';
+        }
+    } catch (Exception $e) {
+        // task_codes table may not exist yet
+    }
+}
 
 if (!$task) {
     echo json_encode(['success' => false, 'message' => 'Invalid or expired code']);
@@ -35,11 +63,15 @@ if (!$task) {
 }
 
 // ── Already completed? ───────────────────────────────────────────────────────
-$stmt = $db->prepare("SELECT id FROM task_completions WHERE user_id = ? AND task_id = ?");
-$stmt->execute([$userId, $task['id']]);
-if ($stmt->fetch()) {
-    echo json_encode(['success' => false, 'message' => 'Task already completed']);
-    exit;
+try {
+    $stmt = $db->prepare("SELECT id FROM task_completions WHERE user_id = ? AND task_id = ?");
+    $stmt->execute([$userId, $task['id']]);
+    if ($stmt->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'Task already completed']);
+        exit;
+    }
+} catch (Exception $e) {
+    // task_completions table missing — treat as not completed yet
 }
 
 // ── Hot-offer: max users cap ─────────────────────────────────────────────────
@@ -106,6 +138,14 @@ try {
     $db->prepare(
         "INSERT INTO task_completions (user_id, task_id, code_used, completed_at) VALUES (?, ?, ?, NOW())"
     )->execute([$userId, $task['id'], $code]);
+
+    // Mark individual code as used
+    if ($codeSource === 'individual') {
+        try {
+            $db->prepare("UPDATE task_codes SET used_by = ?, used_at = NOW() WHERE task_id = ? AND code = ? AND used_by IS NULL")
+               ->execute([$userId, $task['id'], $code]);
+        } catch (Exception $e) { /* table may not exist */ }
+    }
 
     // Award reward + update today_earnings
     if ($rewardType === 'cash') {

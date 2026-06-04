@@ -2,159 +2,226 @@
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
 
-$db = getDB();
+$db     = getDB();
 $method = $_SERVER['REQUEST_METHOD'];
 
-function genCode($len = 8) {
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function genCode(PDO $db, int $len = 8): string {
     $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    $code = '';
-    for ($i = 0; $i < $len; $i++) {
-        $code .= $chars[random_int(0, strlen($chars) - 1)];
+    for ($try = 0; $try < 20; $try++) {
+        $code = '';
+        for ($i = 0; $i < $len; $i++) $code .= $chars[random_int(0, strlen($chars)-1)];
+        $s1 = $db->prepare("SELECT id FROM admin_tasks WHERE verify_code = ?");
+        $s1->execute([$code]);
+        $s2 = $db->prepare("SELECT id FROM task_codes WHERE code = ?");
+        $s2->execute([$code]);
+        if (!$s1->fetch() && !$s2->fetch()) return $code;
     }
-    return $code;
+    throw new Exception('Could not generate unique code');
 }
 
-// Helper: decode steps field in a task row
-function decodeTaskSteps(&$task) {
+function decodeSteps(&$task): void {
     if (!empty($task['steps'])) {
-        $decoded = json_decode($task['steps'], true);
-        $task['steps'] = is_array($decoded) ? $decoded : [];
+        $d = json_decode($task['steps'], true);
+        $task['steps'] = is_array($d) ? $d : [];
     } else {
         $task['steps'] = [];
     }
 }
 
-// ── CREATE TASK ──────────────────────────────────────────────────────────────
-if ($method === 'POST') {
-    $input = json_decode(file_get_contents('php://input'), true);
-
-    $title            = trim($input['title']            ?? '');
-    $description      = trim($input['description']      ?? '');
-    $type             = trim($input['type']             ?? 'daily');   // 'daily' | 'hot'
-    $url              = trim($input['url']              ?? '');
-    $platform         = trim($input['platform']         ?? '');
-    $reward_xp        = (int)($input['reward']          ?? 0);        // frontend sends 'reward'
-    $reward_type      = trim($input['reward_type']      ?? 'xp');
-    $apply_multiplier = (int)($input['apply_multiplier'] ?? 1);
-    $code_type        = $input['code_type']             ?? 'universal';
-    $expires_at       = !empty($input['expires_at'])    ? $input['expires_at'] : null;
-    $max_users        = !empty($input['max_users'])     ? (int)$input['max_users'] : null;
-    $steps            = !empty($input['steps'])         ? json_encode($input['steps']) : null;
-
-    if (empty($title)) {
-        echo json_encode(['success' => false, 'message' => 'Title required']);
-        exit;
-    }
-
-    // Generate universal code only for universal code_type
-    $universal_code = ($code_type === 'universal') ? genCode(8) : null;
-
-    $stmt = $db->prepare(
-        "INSERT INTO admin_tasks
-            (title, description, type, url, platform, reward_xp, reward_type,
-             apply_multiplier, code_type, verify_code, expires_at, max_users, steps, active, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, NOW())"
-    );
-    $stmt->execute([
-        $title, $description, $type, $url, $platform,
-        $reward_xp, $reward_type, $apply_multiplier,
-        $code_type, $universal_code, $expires_at, $max_users, $steps
-    ]);
-
-    echo json_encode([
-        'success'     => true,
-        'task_id'     => $db->lastInsertId(),
-        'verify_code' => $universal_code,   // null for individual tasks
-        'code_type'   => $code_type,
-        'type'        => $type
-    ]);
-    exit;
+function castTask(array &$task): void {
+    $task['id']               = (int)$task['id'];
+    $task['reward_xp']        = (int)($task['reward_xp']        ?? 0);
+    $task['apply_multiplier'] = (int)($task['apply_multiplier'] ?? 1);
+    $task['active']           = (int)($task['active']           ?? 1);
+    $task['max_users']        = isset($task['max_users']) && $task['max_users'] !== null ? (int)$task['max_users'] : null;
+    decodeSteps($task);
 }
 
-// ── LIST ALL TASKS (ADMIN) ───────────────────────────────────────────────────
+// ── LIST ──────────────────────────────────────────────────────────────────────
 if ($method === 'GET' && !isset($_GET['id'])) {
-    $rows = $db->query("SELECT * FROM admin_tasks ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
-    foreach ($rows as &$row) {
-        decodeTaskSteps($row);
-        $row['reward_xp'] = (int)$row['reward_xp'];
+    try {
+        $rows = $db->query("SELECT * FROM admin_tasks ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($rows as &$row) {
+            castTask($row);
+            // Attach individual code count
+            if ($row['code_type'] === 'individual') {
+                try {
+                    $cs = $db->prepare("SELECT COUNT(*) FROM task_codes WHERE task_id = ?");
+                    $cs->execute([$row['id']]);
+                    $row['individual_codes_count'] = (int)$cs->fetchColumn();
+                } catch (Exception $e) { $row['individual_codes_count'] = 0; }
+            }
+        }
+        unset($row);
+        echo json_encode(['success' => true, 'tasks' => $rows]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage(), 'tasks' => []]);
     }
-    unset($row);
-    echo json_encode(['success' => true, 'tasks' => $rows]);
     exit;
 }
 
-// ── GET SINGLE TASK ──────────────────────────────────────────────────────────
+// ── GET SINGLE ────────────────────────────────────────────────────────────────
 if ($method === 'GET' && isset($_GET['id'])) {
-    $id = (int)$_GET['id'];
+    $id   = (int)$_GET['id'];
     $stmt = $db->prepare("SELECT * FROM admin_tasks WHERE id = ?");
     $stmt->execute([$id]);
     $task = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($task) {
-        decodeTaskSteps($task);
-        $task['reward_xp'] = (int)$task['reward_xp'];
-    }
+    if ($task) castTask($task);
     echo json_encode(['success' => true, 'task' => $task]);
     exit;
 }
 
-// ── UPDATE TASK ──────────────────────────────────────────────────────────────
-if ($method === 'PUT') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $id = (int)($input['id'] ?? 0);
+// ── CREATE ────────────────────────────────────────────────────────────────────
+if ($method === 'POST') {
+    $in = json_decode(file_get_contents('php://input'), true) ?? [];
 
-    $title            = trim($input['title']             ?? '');
-    $description      = trim($input['description']       ?? '');
-    $type             = trim($input['type']              ?? 'daily');
-    $url              = trim($input['url']               ?? '');
-    $platform         = trim($input['platform']          ?? '');
-    // Accept both 'reward' (form field name) and 'reward_xp' (DB field name)
-    $reward_xp        = (int)($input['reward']           ?? $input['reward_xp'] ?? 0);
-    $reward_type      = trim($input['reward_type']       ?? 'xp');
-    $apply_multiplier = (int)($input['apply_multiplier'] ?? 1);
-    $expires_at       = !empty($input['expires_at'])     ? $input['expires_at'] : null;
-    $max_users        = !empty($input['max_users'])      ? (int)$input['max_users'] : null;
-    $steps            = !empty($input['steps'])          ? json_encode($input['steps']) : null;
-    $active           = (int)($input['active']           ?? 1);
+    $title            = trim($in['title']       ?? '');
+    $description      = trim($in['description'] ?? '');
+    $type             = in_array($in['type'] ?? '', ['daily','hot']) ? $in['type'] : 'daily';
+    $url              = trim($in['url']         ?? '');
+    $platform         = trim($in['platform']    ?? '');
+    $reward_xp        = max(0, (int)($in['reward_xp'] ?? $in['reward'] ?? 0));
+    $reward_type      = $in['reward_type'] === 'cash' ? 'cash' : 'xp';
+    $apply_multiplier = (int)($in['apply_multiplier'] ?? 1) ? 1 : 0;
+    $code_type        = $in['code_type'] === 'individual' ? 'individual' : 'universal';
+    $hot_limit_type   = trim($in['hot_limit_type'] ?? 'timer'); // 'timer' | 'users'
+    $expires_at       = ($type === 'hot' && $hot_limit_type === 'timer' && !empty($in['expires_at'])) ? $in['expires_at'] : null;
+    $max_users        = ($type === 'hot' && $hot_limit_type === 'users' && !empty($in['max_users'])) ? (int)$in['max_users'] : null;
+    $steps_raw        = $in['steps'] ?? [];
+    $steps            = !empty($steps_raw) ? json_encode(array_values($steps_raw)) : null;
 
-    $stmt = $db->prepare(
-        "UPDATE admin_tasks SET
-            title = ?, description = ?, type = ?, url = ?, platform = ?,
-            reward_xp = ?, reward_type = ?, apply_multiplier = ?,
-            expires_at = ?, max_users = ?, steps = ?, active = ?
-         WHERE id = ?"
-    );
-    $stmt->execute([
-        $title, $description, $type, $url, $platform,
-        $reward_xp, $reward_type, $apply_multiplier,
-        $expires_at, $max_users, $steps, $active, $id
-    ]);
+    if (empty($title)) { echo json_encode(['success'=>false,'message'=>'Title required']); exit; }
+    if ($reward_xp <= 0) { echo json_encode(['success'=>false,'message'=>'Reward amount must be greater than 0']); exit; }
+    if ($type === 'hot' && $hot_limit_type === 'timer' && !$expires_at) { echo json_encode(['success'=>false,'message'=>'Hot offer with Timer requires an expiry date']); exit; }
+    if ($type === 'hot' && $hot_limit_type === 'users' && !$max_users) { echo json_encode(['success'=>false,'message'=>'Hot offer with Max Users requires a user limit']); exit; }
 
-    // Return updated task so frontend can refresh the list immediately
-    $stmt2 = $db->prepare("SELECT * FROM admin_tasks WHERE id = ?");
-    $stmt2->execute([$id]);
-    $updated = $stmt2->fetch(PDO::FETCH_ASSOC);
-    if ($updated) {
-        decodeTaskSteps($updated);
-        $updated['reward_xp'] = (int)$updated['reward_xp'];
+    $universal_code = null;
+    if ($code_type === 'universal') {
+        // If admin provided a code, validate & use it; otherwise auto-generate
+        $provided = strtoupper(trim($in['verify_code'] ?? ''));
+        if (!empty($provided)) {
+            // Check it's not already in use by another task
+            $chk = $db->prepare("SELECT id FROM admin_tasks WHERE verify_code = ? AND id != 0");
+            $chk->execute([$provided]);
+            if ($chk->fetch()) {
+                echo json_encode(['success'=>false,'message'=>'That code is already used by another task. Please generate a new one.']);
+                exit;
+            }
+            $universal_code = $provided;
+        } else {
+            $universal_code = genCode($db);
+        }
     }
 
-    echo json_encode(['success' => true, 'task' => $updated]);
+    try {
+        $stmt = $db->prepare("INSERT INTO admin_tasks
+            (title, description, type, url, platform, reward_xp, reward_type,
+             apply_multiplier, code_type, verify_code, expires_at, max_users, steps, active, created_at)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,1,NOW())");
+        $stmt->execute([
+            $title, $description, $type, $url, $platform,
+            $reward_xp, $reward_type, $apply_multiplier,
+            $code_type, $universal_code, $expires_at, $max_users, $steps
+        ]);
+        $taskId = (int)$db->lastInsertId();
+
+        // Auto-generate individual codes if requested
+        $generatedCodes = [];
+        if ($code_type === 'individual') {
+            $count  = max(1, min(500, (int)($in['individual_count'] ?? 10)));
+            $insert = $db->prepare("INSERT INTO task_codes (task_id, code) VALUES (?,?)");
+            for ($i = 0; $i < $count; $i++) {
+                $c = genCode($db);
+                $insert->execute([$taskId, $c]);
+                $generatedCodes[] = $c;
+            }
+        }
+
+        echo json_encode([
+            'success'          => true,
+            'task_id'          => $taskId,
+            'verify_code'      => $universal_code,
+            'codes_generated'  => count($generatedCodes),
+        ]);
+    } catch (Exception $e) {
+        echo json_encode(['success'=>false,'message'=>'Create failed: '.$e->getMessage()]);
+    }
     exit;
 }
 
-// ── TOGGLE ACTIVE ────────────────────────────────────────────────────────────
+// ── UPDATE ────────────────────────────────────────────────────────────────────
+if ($method === 'PUT') {
+    $in = json_decode(file_get_contents('php://input'), true) ?? [];
+    $id = (int)($in['id'] ?? 0);
+    if ($id <= 0) { echo json_encode(['success'=>false,'message'=>'Invalid task ID']); exit; }
+
+    $title            = trim($in['title']       ?? '');
+    $description      = trim($in['description'] ?? '');
+    $type             = in_array($in['type'] ?? '', ['daily','hot']) ? $in['type'] : 'daily';
+    $url              = trim($in['url']         ?? '');
+    $platform         = trim($in['platform']    ?? '');
+    $reward_xp        = max(0, (int)($in['reward_xp'] ?? $in['reward'] ?? 0));
+    $reward_type      = $in['reward_type'] === 'cash' ? 'cash' : 'xp';
+    $apply_multiplier = (int)($in['apply_multiplier'] ?? 1) ? 1 : 0;
+    $hot_limit_type   = trim($in['hot_limit_type'] ?? 'timer');
+    $expires_at       = ($type === 'hot' && $hot_limit_type === 'timer' && !empty($in['expires_at'])) ? $in['expires_at'] : null;
+    $max_users        = ($type === 'hot' && $hot_limit_type === 'users' && !empty($in['max_users'])) ? (int)$in['max_users'] : null;
+    $steps_raw        = $in['steps'] ?? [];
+    $steps            = !empty($steps_raw) ? json_encode(array_values($steps_raw)) : null;
+    $active           = (int)($in['active'] ?? 1) ? 1 : 0;
+
+    try {
+        $db->prepare("UPDATE admin_tasks SET
+            title=?, description=?, type=?, url=?, platform=?,
+            reward_xp=?, reward_type=?, apply_multiplier=?,
+            expires_at=?, max_users=?, steps=?, active=?
+            WHERE id=?")
+        ->execute([
+            $title, $description, $type, $url, $platform,
+            $reward_xp, $reward_type, $apply_multiplier,
+            $expires_at, $max_users, $steps, $active, $id
+        ]);
+
+        $stmt = $db->prepare("SELECT * FROM admin_tasks WHERE id = ?");
+        $stmt->execute([$id]);
+        $updated = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($updated) castTask($updated);
+
+        echo json_encode(['success'=>true, 'task'=>$updated]);
+    } catch (Exception $e) {
+        echo json_encode(['success'=>false,'message'=>'Update failed: '.$e->getMessage()]);
+    }
+    exit;
+}
+
+// ── TOGGLE ACTIVE ─────────────────────────────────────────────────────────────
 if ($method === 'PATCH') {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $id = (int)($input['id'] ?? 0);
-    $db->prepare("UPDATE admin_tasks SET active = NOT active WHERE id = ?")->execute([$id]);
-    echo json_encode(['success' => true]);
+    $in = json_decode(file_get_contents('php://input'), true) ?? [];
+    $id = (int)($in['id'] ?? 0);
+    if ($id <= 0) { echo json_encode(['success'=>false,'message'=>'Invalid ID']); exit; }
+    $db->prepare("UPDATE admin_tasks SET active = IF(active=1,0,1) WHERE id=?")->execute([$id]);
+    $stmt = $db->prepare("SELECT active FROM admin_tasks WHERE id=?");
+    $stmt->execute([$id]);
+    echo json_encode(['success'=>true, 'active'=>(int)$stmt->fetch(PDO::FETCH_ASSOC)['active']]);
     exit;
 }
 
-// ── DELETE TASK ──────────────────────────────────────────────────────────────
+// ── DELETE ────────────────────────────────────────────────────────────────────
 if ($method === 'DELETE') {
     $id = (int)($_GET['id'] ?? 0);
-    $db->prepare("DELETE FROM admin_tasks WHERE id = ?")->execute([$id]);
-    echo json_encode(['success' => true]);
+    if ($id <= 0) { echo json_encode(['success'=>false,'message'=>'Invalid ID']); exit; }
+    try {
+        $db->prepare("DELETE FROM task_completions WHERE task_id=?")->execute([$id]);
+        $db->prepare("DELETE FROM task_codes WHERE task_id=?")->execute([$id]);
+        $s = $db->prepare("DELETE FROM admin_tasks WHERE id=?");
+        $s->execute([$id]);
+        echo json_encode(['success' => $s->rowCount() > 0, 'message' => $s->rowCount() > 0 ? 'Deleted' : 'Not found']);
+    } catch (Exception $e) {
+        echo json_encode(['success'=>false,'message'=>'Delete failed: '.$e->getMessage()]);
+    }
     exit;
 }
+
+http_response_code(405);
+echo json_encode(['success'=>false,'message'=>'Method not allowed']);

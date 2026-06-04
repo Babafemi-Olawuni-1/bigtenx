@@ -8,7 +8,8 @@ import { OverviewTab, TasksTab, UsersTab, RevenueTab } from './AdminTabs'
 const BLANK = {
   title:'', description:'', type:'daily', platform:'Facebook',
   url:'', reward:50, reward_type:'xp', apply_multiplier:1,
-  code_type:'universal', expires_at:'', max_users:'', steps:[]
+  code_type:'universal', verify_code:'', individual_count:10,
+  hot_limit_type:'timer', expires_at:'', max_users:'', steps:[]
 }
 
 export default function AdminDashboard({ token, onLogout }) {
@@ -55,7 +56,23 @@ export default function AdminDashboard({ token, onLogout }) {
 
   const handleEditTask = (task) => {
     setEditingTask(task.id)
-    setForm({ title:task.title||'', description:task.description||'', type:task.type||'daily', platform:task.platform||'Facebook', url:task.url||'', reward:task.reward_xp||50, reward_type:task.reward_type||'xp', apply_multiplier:task.apply_multiplier??1, code_type:task.code_type||'universal', expires_at:task.expires_at||'', max_users:task.max_users||'', steps:Array.isArray(task.steps)?task.steps:[] })
+    setForm({
+      title:           task.title           || '',
+      description:     task.description     || '',
+      type:            task.type            || 'daily',
+      platform:        task.platform        || 'Facebook',
+      url:             task.url             || '',
+      reward:          task.reward_xp       || 50,
+      reward_type:     task.reward_type     || 'xp',
+      apply_multiplier: task.apply_multiplier ?? 1,
+      code_type:       task.code_type       || 'universal',
+      verify_code:     task.verify_code     || '',
+      individual_count: 10,
+      hot_limit_type:  task.expires_at ? 'timer' : (task.max_users ? 'users' : 'timer'),
+      expires_at:      task.expires_at      || '',
+      max_users:       task.max_users       || '',
+      steps:           Array.isArray(task.steps) ? task.steps : [],
+    })
     setShowForm(true)
   }
 
@@ -65,25 +82,87 @@ export default function AdminDashboard({ token, onLogout }) {
     if (!form.url.trim())   { showToast('URL required','error'); return }
     setLoading(true)
     try {
-      const payload = { ...form, reward: form.reward, expires_at: form.expires_at||null, max_users: form.max_users||null }
+      const payload = {
+        title:            form.title,
+        description:      form.description,
+        type:             form.type,
+        url:              form.url,
+        platform:         form.platform,
+        reward_xp:        form.reward,
+        reward:           form.reward,
+        reward_type:      form.reward_type,
+        apply_multiplier: form.apply_multiplier,
+        code_type:        form.code_type,
+        verify_code:      form.code_type === 'universal' ? (form.verify_code || null) : null,
+        individual_count: form.individual_count || 10,
+        hot_limit_type:   form.hot_limit_type || 'timer',
+        expires_at:       form.expires_at  || null,
+        max_users:        form.max_users   || null,
+        steps:            form.steps,
+      }
       if (editingTask) payload.id = editingTask
-      const r = await fetch(`${API}/admin/tasks.php`, { method: editingTask ? 'PUT' : 'POST', headers, body: JSON.stringify(payload) })
+
+      const r = await fetch(`${API}/admin/tasks.php`, {
+        method: editingTask ? 'PUT' : 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      })
       const d = await r.json()
-      if (d.success) { showToast(editingTask ? 'Task updated!' : 'Task created!'); resetForm(); loadTasks(); loadStats() }
-      else showToast(d.message || 'Save failed','error')
-    } catch { showToast('Network error','error') }
-    finally { setLoading(false) }
+      if (d.success) {
+        // If individual code type, generate the codes now
+        if (!editingTask && payload.code_type === 'individual' && d.task_id) {
+          try {
+            const codeCount = form.individual_count || 10
+            const cr = await fetch(`${API}/admin/task_codes.php`, {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ task_id: d.task_id, count: codeCount }),
+            })
+            const cd = await cr.json()
+            if (cd.success) {
+              showToast(`Task created! ${cd.count} individual codes generated.`)
+            } else {
+              showToast(`Task created but code generation failed: ${cd.message}`, 'error')
+            }
+          } catch {
+            showToast('Task created but failed to generate codes', 'error')
+          }
+        } else {
+          showToast(editingTask ? 'Task updated!' : `Task created! Code: ${d.verify_code || 'N/A'}`)
+        }
+        resetForm()
+        loadTasks()
+        loadStats()
+      } else {
+        showToast(d.message || 'Save failed', 'error')
+      }
+    } catch (err) {
+      showToast('Network error: ' + err.message, 'error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleToggleTask = async (id) => {
-    await fetch(`${API}/admin/tasks.php`, { method:'PATCH', headers, body:JSON.stringify({ id }) })
-    loadTasks()
+    try {
+      await fetch(`${API}/admin/tasks.php`, { method:'PATCH', headers, body:JSON.stringify({ id }) })
+      loadTasks()
+    } catch { showToast('Toggle failed','error') }
   }
 
   const handleDeleteTask = async (id) => {
     if (!confirm('Delete this task permanently?')) return
-    await fetch(`${API}/admin/tasks.php?id=${id}`, { method:'DELETE', headers })
-    loadTasks(); loadStats(); showToast('Task deleted')
+    try {
+      const r = await fetch(`${API}/admin/tasks.php?id=${id}`, { method:'DELETE', headers })
+      const d = await r.json()
+      if (d.success) {
+        showToast('Task deleted')
+        loadTasks()
+        loadStats()
+      } else {
+        showToast(d.message || 'Delete failed', 'error')
+      }
+    } catch { showToast('Network error during delete', 'error') }
   }
 
   const handleCopyCode = (code) => { navigator.clipboard.writeText(code); showToast('Code copied!','info') }
@@ -127,7 +206,7 @@ export default function AdminDashboard({ token, onLogout }) {
         )}
         {tab === 'tasks' && (
           <TasksTab
-            tasks={tasks} darkMode={darkMode}
+            tasks={tasks} darkMode={darkMode} token={token}
             onNew={() => { resetForm(); setShowForm(true) }}
             onEdit={handleEditTask}
             onToggle={handleToggleTask}

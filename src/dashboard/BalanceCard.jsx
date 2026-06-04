@@ -7,9 +7,22 @@ export default function BalanceCard({ user, darkMode, onUpgrade }) {
   const active = isLevelActive(user)
 
   // Support both snake_case (from API) and camelCase (legacy)
-  const usdBalance    = parseFloat(user?.usd_balance    ?? user?.usdBalance    ?? 0)
-  const todayEarnings = parseInt(  user?.today_earnings ?? user?.todayEarnings ?? 0, 10)
-  const coins         = parseInt(  user?.coins          ?? 0, 10)
+  const usdBalance       = parseFloat(user?.usd_balance         ?? user?.usdBalance        ?? 0)
+  const todayXP          = parseInt(  user?.today_earnings       ?? user?.todayEarnings     ?? 0, 10)
+  const todayCash        = parseFloat(user?.today_earnings_cash  ?? 0)
+  const coins            = parseInt(  user?.coins                ?? 0, 10)
+
+  // Build today's earnings label: show only what was actually earned
+  let todayLabel = ''
+  if (todayXP > 0 && todayCash > 0) {
+    todayLabel = `+${todayXP} XP, +$${todayCash.toFixed(2)}`
+  } else if (todayXP > 0) {
+    todayLabel = `+${todayXP} XP`
+  } else if (todayCash > 0) {
+    todayLabel = `+$${todayCash.toFixed(2)}`
+  } else {
+    todayLabel = '—'
+  }
 
   return (
     <div style={{
@@ -62,7 +75,7 @@ export default function BalanceCard({ user, darkMode, onUpgrade }) {
             fontSize: 14, fontWeight: 800, color: C.orange, marginTop: 2,
             textShadow: darkMode ? `0 0 14px rgba(255,111,0,0.6)` : 'none',
           }}>
-            +{todayEarnings} XP
+            {todayLabel}
           </div>
         </div>
         <TrendingUp size={28} color={darkMode ? 'rgba(255,111,0,0.8)' : 'rgba(255,255,255,0.65)'} />
