@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { t, C } from './tokens'
 import { API } from '../auth/api'
+import GlobalTimer from '../components/GlobalTimer'
 
 // ── Icon map ─────────────────────────────────────────────────────────────────
 const ICON_MAP = {
@@ -80,7 +81,6 @@ function TaskModal({ task, onClose, onSubmit, darkMode, dailyExpiry }) {
   const tk = t(darkMode)
 
   const isHot = task.type === 'hot'
-  // NO code pre-filling for universal hot offers - user must enter code
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -230,7 +230,6 @@ function TaskCard({ task, done, darkMode, onOpen, dailyExpiry }) {
   const pColor = platformColor(task.platform)
   const disabled = done || isExpired || isFull
 
-  // Format timer or max users display
   const getCenterDisplay = () => {
     if (task.type === 'hot' && task.expires_at && !isExpired) {
       return <Countdown expiresAt={task.expires_at} />
@@ -270,19 +269,15 @@ function TaskCard({ task, done, darkMode, onOpen, dailyExpiry }) {
             {task.description || 'Complete this task to earn rewards'}
           </div>
 
-          {/* Three-column layout: Reward | Timer/Max Users | Status */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 10, borderTop: `1px solid ${tk.cardBorder}` }}>
-            {/* Left: Reward */}
             <span style={{ fontSize: 12, fontWeight: 700, color: C.orange }}>
               {task.reward_type === 'cash' ? `$${parseFloat(task.reward_xp).toFixed(2)}` : `+${task.reward_xp} XP`}
             </span>
 
-            {/* Center: Timer or Max Users (plain text, no background) */}
             <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
               {getCenterDisplay()}
             </div>
 
-            {/* Right: Status Badge */}
             <div style={{ minWidth: 70, textAlign: 'right' }}>
               {!done && !isExpired && !isFull && (
                 <span style={{ fontSize: 11, fontWeight: 400, fontStyle: 'italic', fontFamily: "'Segoe Script', 'Brush Script MT', 'Pacifico', 'Comic Sans MS', cursive", color: C.orange, opacity: 0.85 }}>
@@ -342,7 +337,6 @@ export default function TasksScreen({ user, updateUser, darkMode, setDarkMode })
       .catch(() => {})
   }, [])
 
-  // Load completed tasks from server on login
   useEffect(() => {
     if (!user?.id) return;
     
@@ -433,14 +427,18 @@ export default function TasksScreen({ user, updateUser, darkMode, setDarkMode })
 
   return (
     <div style={{ background:tk.bg, minHeight:'100%', paddingBottom:20 }}>
+      {/* Header with Global Timer */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 16px 10px' }}>
         <span style={{ fontSize:20, fontWeight:800, color:tk.text }}>Tasks</span>
-        <button
-          onClick={() => setDarkMode?.(!darkMode)}
-          style={{ width:34, height:34, borderRadius:'50%', background:tk.card, border: darkMode ? '1px solid rgba(255,111,0,0.22)' : 'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
-        >
-          {darkMode ? <Sun size={15} color={C.orange} /> : <Moon size={15} color={C.navy} />}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <GlobalTimer darkMode={darkMode} />
+          <button
+            onClick={() => setDarkMode?.(!darkMode)}
+            style={{ width:34, height:34, borderRadius:'50%', background:tk.card, border: darkMode ? '1px solid rgba(255,111,0,0.22)' : 'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
+          >
+            {darkMode ? <Sun size={15} color={C.orange} /> : <Moon size={15} color={C.navy} />}
+          </button>
+        </div>
       </div>
 
       <div style={{ margin:'0 16px 16px', borderRadius:60, padding:4, display:'flex', background: darkMode ? '#081226' : '#fff' }}>
