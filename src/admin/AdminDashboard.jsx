@@ -79,14 +79,16 @@ export default function AdminDashboard({ token, onLogout }) {
   const submitTask = async (e) => {
     e.preventDefault()
     if (!form.title.trim()) { showToast('Task title required','error'); return }
-    if (!form.url.trim())   { showToast('URL required','error'); return }
+    // URL validation REMOVED - URL is now optional
+    // if (!form.url.trim())   { showToast('URL required','error'); return }
+    
     setLoading(true)
     try {
       const payload = {
         title:            form.title,
         description:      form.description,
         type:             form.type,
-        url:              form.url,
+        url:              form.url || null,  // Send null if empty
         platform:         form.platform,
         reward_xp:        form.reward,
         reward:           form.reward,
