@@ -18,7 +18,7 @@ export default function Footer() {
   return (
     <footer style={{ padding: '40px 20px 24px', borderTop: `1px solid ${border}`, background: '#0a0f1e' }}>
       <div style={{ maxWidth: 960, margin: '0 auto' }}>
-        {/* Top row - LOGO + IG TENX TEXT (same style as navbar) */}
+        {/* Top row - Logo with BIG(white)TENX(orange) */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 18, marginBottom: 24 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5px', textDecoration: 'none', margin: 0, padding: 0 }}>
             <img 
@@ -34,8 +34,8 @@ export default function Footer() {
               letterSpacing: '-0.5px',
               padding: 0
             }}>
-              <span style={{ color: '#ff6f00' }}>IG</span>
-              <span style={{ color: 'white' }}>TENX</span>
+              <span style={{ color: 'white' }}>BIG</span>
+              <span style={{ color: '#ff6f00' }}>TENX</span>
             </span>
           </div>
           <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>

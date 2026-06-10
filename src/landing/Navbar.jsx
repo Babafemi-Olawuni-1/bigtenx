@@ -5,7 +5,7 @@ import { useRipple } from './hooks'
 const O = '#ff6f00'
 const B = '#001F54'
 
-export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
+export default function Navbar({ onLaunch }) {
   const [scrolled, setScrolled] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const ripple = useRipple()
@@ -38,7 +38,7 @@ export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
   return (
     <>
       <nav style={navStyle}>
-        {/* Logo with text - NEGATIVE MARGIN PULLS TEXT INTO LOGO */}
+        {/* Logo with text - BIG(orange)TENX */}
         <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 0, textDecoration: 'none', margin: 0, padding: 0 }}>
           <img 
             src="/logo.png" 
@@ -51,11 +51,11 @@ export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
             fontWeight: 800, 
             fontSize: 24, 
             letterSpacing: '-0.5px',
-            marginLeft: -12,  // Increased negative margin - pulls text further left
+            marginLeft: -12,
             padding: 0
           }}>
-            <span style={{ color: '#ff6f00' }}>IG</span>
-            <span style={{ color: 'white' }}>TENX</span>
+            <span style={{ color: 'white' }}>BIG</span>
+            <span style={{ color: '#ff6f00' }}>TENX</span>
           </span>
         </a>
 
@@ -71,25 +71,8 @@ export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
           ))}
         </div>
 
-        {/* Right side */}
+        {/* Right side - removed dark mode toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {/* Theme Toggle Button */}
-          <button
-            onClick={() => setDarkMode && setDarkMode(!darkMode)}
-            style={{
-              width: 38, height: 38, borderRadius: 10,
-              background: 'rgba(255,255,255,0.06)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 16
-            }}
-          >
-            {darkMode ? '☀️' : '🌙'}
-          </button>
-
           {/* Desktop launch button */}
           <button onClick={(e) => { ripple(e); setTimeout(onLaunch, 250) }}
             className="ripple-container hidden-mobile"
@@ -116,7 +99,7 @@ export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
           <div className="slide-up" style={{ position: 'relative', background: '#111827', borderRadius: '24px 24px 0 0', padding: '16px 24px 40px', boxShadow: '0 -8px 40px rgba(0,0,0,0.4)' }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#374151', margin: '0 auto 20px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              {/* Drawer logo - ALSO CLOSER */}
+              {/* Drawer logo */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
                 <img 
                   src="/logo.png" 
@@ -125,8 +108,8 @@ export default function Navbar({ onLaunch, darkMode, setDarkMode }) {
                   onError={e => { e.target.style.display = 'none' }}
                 />
                 <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, marginLeft: -10 }}>
-                  <span style={{ color: '#ff6f00' }}>IG</span>
-                  <span style={{ color: 'white' }}>TENX</span>
+                  <span style={{ color: 'white' }}>BIG</span>
+                  <span style={{ color: '#ff6f00' }}>TENX</span>
                 </span>
               </div>
               <button onClick={() => setDrawerOpen(false)} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: '#1f2937', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

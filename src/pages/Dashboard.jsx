@@ -16,6 +16,11 @@ import Vault from './Vault'
 import DepositScreen from './DepositScreen'
 import VirtualAccountScreen from './VirtualAccountScreen'
 import ReferScreen from './ReferScreen'
+import ContestPage from './ContestPage'
+import MarketplacePage from './MarketplacePage'
+import ExchangePage from './ExchangePage'
+import AcademyPage from './AcademyPage'
+import SquadPage from './SquadPage'
 import { getFlagEmoji } from '../dashboard/countryFlags'
 import { isLevelActive, LEVEL_MAP } from '../dashboard/levels'
 import { API } from '../auth/api'
@@ -60,6 +65,22 @@ function HomeScreen({ user, updateUser, darkMode, setDarkMode, setActiveTab, onU
     }
     if (serviceLabel === 'Referral') {
       setActiveTab('refer')
+      return
+    }
+    if (serviceLabel === 'Contest') {
+      setActiveTab('contest')
+      return
+    }
+    if (serviceLabel === 'Exchange') {
+      setActiveTab('exchange')
+      return
+    }
+    if (serviceLabel === 'Academy') {
+      setActiveTab('academy')
+      return
+    }
+    if (serviceLabel === 'Marketplace') {
+      setActiveTab('marketplace')
       return
     }
     // For other services, show coming soon modal
@@ -151,8 +172,6 @@ export default function Dashboard({ user: initialUser, onLogout }) {
   const [showVirtualAccount, setShowVirtualAccount] = useState(false)
 
   // Only merge initialUser into store once on mount — never again.
-  // Using a ref prevents updateUser (which changes identity each render) from
-  // being in the dep array, which was the root cause of the infinite loop.
   const initialUserMerged = useRef(false)
   useEffect(() => {
     if (initialUser && !initialUserMerged.current) {
@@ -256,6 +275,16 @@ export default function Dashboard({ user: initialUser, onLogout }) {
         return <Vault user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'refer':
         return <ReferScreen user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+      case 'contest':
+        return <ContestPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+      case 'marketplace':
+        return <MarketplacePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+      case 'exchange':
+        return <ExchangePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+      case 'academy':
+        return <AcademyPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+      case 'squad':
+        return <SquadPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
       default:
         return <HomeScreen user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} setActiveTab={setActiveTab} onUpgrade={openUpgrade} />
     }

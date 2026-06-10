@@ -1,4 +1,4 @@
-import { Home, ClipboardList, TrendingUp, Wallet, User } from 'lucide-react'
+import { Home, ClipboardList, Wallet, Users, User } from 'lucide-react'
 import { C, t } from './tokens'
 
 export default function BottomNav({ activeTab, setActiveTab, darkMode }) {
@@ -8,6 +8,7 @@ export default function BottomNav({ activeTab, setActiveTab, darkMode }) {
     { id: 'home', label: 'Home', icon: Home },
     { id: 'tasks', label: 'Tasks', icon: ClipboardList },
     { id: 'wallet', label: 'Wallet', icon: Wallet },
+    { id: 'squad', label: 'Squad', icon: Users },
     { id: 'profile', label: 'Profile', icon: User },
   ]
 

@@ -17,10 +17,10 @@ export default function ServicesGrid({ darkMode, onServiceClick }) {
   const handleClick = (service) => {
     // Map service labels to screen names for navigation
     const screenMap = {
-      'Vault': 'vault',
-      'Referral': 'refer',
       'Levels': 'levels',
+      'Referral': 'refer',
       'Contest': 'contest',
+      'Vault': 'vault',
       'Exchange': 'exchange',
       'Academy': 'academy',
       'Marketplace': 'marketplace',

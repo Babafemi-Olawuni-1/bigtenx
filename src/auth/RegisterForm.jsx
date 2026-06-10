@@ -119,8 +119,11 @@ export default function RegisterForm({ onSuccess, onLogin }) {
   return (
     <form onSubmit={handleSubmit} style={{ paddingBottom: 4 }}>
       <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: 'white', margin: '0 0 3px', letterSpacing: '-0.02em' }}>Create account</h1>
-        <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: 12, margin: 0 }}>Start with 5 free XP. No deposit needed.</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 2, marginBottom: 6 }}>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: 'white', letterSpacing: '-0.02em' }}>BIG</span>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 21, color: O, letterSpacing: '-0.02em' }}>TENX</span>
+        </div>
+        <p style={{ color: 'rgba(255,255,255,0.38)', fontSize: 12, margin: 0 }}>You get a welcome bonus of 5XP</p>
       </div>
 
       {error && (
