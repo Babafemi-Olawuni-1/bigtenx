@@ -2,7 +2,7 @@ import { TrendingUp } from 'lucide-react'
 import { C, t } from './tokens'
 import { isLevelActive } from './levels'
 
-export default function BalanceCard({ user, darkMode, onUpgrade }) {
+export default function BalanceCard({ user, darkMode, onUpgrade, onFund }) {
   const tk     = t(darkMode)
   const active = isLevelActive(user)
 
@@ -81,10 +81,10 @@ export default function BalanceCard({ user, darkMode, onUpgrade }) {
         <TrendingUp size={28} color={darkMode ? 'rgba(255,111,0,0.8)' : 'rgba(255,255,255,0.65)'} />
       </div>
 
-      {/* Buttons */}
+      {/* Buttons - FIXED: Show "Fund" when active, "Upgrade" when not active */}
       <div style={{ display: 'flex', gap: 10, position: 'relative', zIndex: 1 }}>
         <button
-          onClick={onUpgrade}
+          onClick={active ? onFund : onUpgrade}
           style={{
             flex: 1, height: 44, borderRadius: 13, background: C.orange,
             border: 'none', color: '#fff', fontFamily: 'inherit',

@@ -22,6 +22,7 @@ import ExchangePage from './ExchangePage'
 import AcademyPage from './AcademyPage'
 import SquadPage from './SquadPage'
 import ProfilePage from './ProfilePage'
+import UpgradePage from './UpgradePage'
 import { getFlagEmoji } from '../dashboard/countryFlags'
 import { isLevelActive, LEVEL_MAP } from '../dashboard/levels'
 import { API } from '../auth/api'
@@ -49,13 +50,12 @@ function HomeScreen({ user, updateUser, darkMode, setDarkMode, setActiveTab, onU
   const tk = t(darkMode)
 
   const handleServiceClick = (serviceLabel, screenName) => {
-    // Handle navigation for different services
     if (serviceLabel === 'Tasks') { 
       setActiveTab('tasks')
       return 
     }
     if (serviceLabel === 'Levels') { 
-      onUpgrade()
+      setActiveTab('upgrade')
       return 
     }
     if (serviceLabel === 'Vault') {
@@ -82,22 +82,38 @@ function HomeScreen({ user, updateUser, darkMode, setDarkMode, setActiveTab, onU
       setActiveTab('marketplace')
       return
     }
-    // For other services, show coming soon modal
     setModal(serviceLabel)
+  }
+
+  const handlePromoAction = (action) => {
+    if (action === 'tasks') {
+      setActiveTab('tasks')
+    } else if (action === 'referral') {
+      setActiveTab('refer')
+    } else if (action === 'vault') {
+      setActiveTab('vault')
+    }
   }
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
       <DashHeader user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
 
-      {/* REMOVED: Account not activated banner */}
-      {/* REMOVED: Level info banner */}
-
-      <BalanceCard user={user} darkMode={darkMode} onUpgrade={onUpgrade} />
+      <BalanceCard 
+        user={user} 
+        darkMode={darkMode} 
+        onUpgrade={onUpgrade} 
+        onFund={() => setActiveTab('wallet')} 
+      />
+      
       <StreakBar user={user} updateUser={updateUser} onUpgrade={onUpgrade} />
+      
       <ServicesGrid darkMode={darkMode} onServiceClick={handleServiceClick} />
-      <PromoCarousel darkMode={darkMode} />
+      
+      <PromoCarousel darkMode={darkMode} onAction={handlePromoAction} />
+      
       <DashFooter darkMode={darkMode} />
+      
       {modal && <ComingSoonModal service={modal} onClose={() => setModal(null)} darkMode={darkMode} />}
     </div>
   )
@@ -110,7 +126,6 @@ export default function Dashboard({ user: initialUser, onLogout }) {
   const [showDeposit, setShowDeposit] = useState(false)
   const [showVirtualAccount, setShowVirtualAccount] = useState(false)
 
-  // Only merge initialUser into store once on mount — never again.
   const initialUserMerged = useRef(false)
   useEffect(() => {
     if (initialUser && !initialUserMerged.current) {
@@ -118,9 +133,8 @@ export default function Dashboard({ user: initialUser, onLogout }) {
       updateUser(initialUser)
     }
     setLoading(false)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Fetch notifications once per user id — NOT on every updateUser reference change.
   const notifFetched = useRef(null)
   useEffect(() => {
     const uid = user?.id
@@ -130,7 +144,7 @@ export default function Dashboard({ user: initialUser, onLogout }) {
       .then(r => r.json())
       .then(data => { if (data.success) updateUser({ notifications: data.notifications }) })
       .catch(() => {})
-  }, [user?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   const tk = t(darkMode)
   const openUpgrade = () => setShowUpgrade(true)
@@ -152,7 +166,7 @@ export default function Dashboard({ user: initialUser, onLogout }) {
   }
 
   const handleBackFromScreen = () => {
-    setActiveTab('wallet')
+    setActiveTab('home')
   }
 
   if (loading) {
@@ -163,7 +177,6 @@ export default function Dashboard({ user: initialUser, onLogout }) {
     return <div style={{ background: tk.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tk.text }}>Please login again</div>
   }
 
-  // Handle nested screens (deposit, virtual account)
   if (showDeposit) {
     return (
       <div style={{ background: tk.bg, fontFamily: "'Sora',sans-serif", minHeight: '100vh' }}>
@@ -205,6 +218,7 @@ export default function Dashboard({ user: initialUser, onLogout }) {
           onUpgrade={openUpgrade}
           onDeposit={handleDeposit}
           onVirtualAccount={handleVirtualAccount}
+          onBack={handleBackFromScreen}
         />
       case 'tasks':
         return <TasksScreen user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} />
@@ -214,22 +228,34 @@ export default function Dashboard({ user: initialUser, onLogout }) {
           darkMode={darkMode} 
           setDarkMode={setDarkMode} 
           onLogout={onLogout} 
-          onUpgrade={openUpgrade} 
+          onUpgrade={openUpgrade}
+          onBack={handleBackFromScreen}
         />
       case 'vault':
         return <Vault user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'refer':
         return <ReferScreen user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'contest':
-        return <ContestPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return <ContestPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'marketplace':
-        return <MarketplacePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return <MarketplacePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'exchange':
-        return <ExchangePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return <ExchangePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'academy':
-        return <AcademyPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return <AcademyPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
       case 'squad':
-        return <SquadPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return <SquadPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+      case 'upgrade':
+        return <UpgradePage 
+          user={user} 
+          darkMode={darkMode} 
+          setDarkMode={setDarkMode} 
+          onClose={handleBackFromScreen}
+          onUpgrade={(plan) => {
+            updateUser({ level: plan === 'bronze' ? 1 : plan === 'silver' ? 2 : plan === 'gold' ? 3 : 4 })
+            openUpgrade()
+          }}
+        />
       default:
         return <HomeScreen user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} setActiveTab={setActiveTab} onUpgrade={openUpgrade} />
     }

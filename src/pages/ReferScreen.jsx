@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { Sun, Moon, Copy, Share2, Trophy, X } from 'lucide-react'
 import { t, C } from '../dashboard/tokens'
 
-// ── Commission Tiers ──────────────────────────────────────────────────────────
 const TIERS = [
   { letter: 'B', name: 'Bronze', percent: '20%', price: '$1', color: '#FF6B00' },
   { letter: 'S', name: 'Silver', percent: '30%', price: '$5', color: '#7A8AAD' },
@@ -11,10 +10,9 @@ const TIERS = [
   { letter: 'V', name: 'VIP', percent: '$1', price: '$100', color: '#7C3AED' },
 ]
 
-// ── Leaderboard Modal ─────────────────────────────────────────────────────────
 function LeaderboardModal({ onClose, darkMode }) {
   const tk = t(darkMode)
-  const [leaderboard, setLeaderboard] = useState([
+  const [leaderboard] = useState([
     { name: 'Femtech', earnings: 850000, avatar: 'F', color: '#E5A100' },
     { name: 'Ayo', earnings: 475600, avatar: 'A', color: '#059669' },
     { name: 'Sayi', earnings: 30000, avatar: 'S', color: '#7C3AED' },
@@ -26,10 +24,10 @@ function LeaderboardModal({ onClose, darkMode }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: tk.card, borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 500, maxHeight: '88%', display: 'flex', flexDirection: 'column', animation: 'slideUp 0.3s cubic-bezier(0.32,1.2,0.5,1)' }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: tk.card, borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 500, maxHeight: '88%', display: 'flex', flexDirection: 'column' }}>
         <div style={{ width: 40, height: 4, borderRadius: 2, background: tk.cardBorder, margin: '12px auto 0' }} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px', borderBottom: `1px solid ${tk.cardBorder}` }}>
-          <span style={{ fontSize: 18, fontWeight: 900, color: tk.text, letterSpacing: '-.02em' }}>🏆 Leaderboard</span>
+          <span style={{ fontSize: 18, fontWeight: 900, color: tk.text }}>🏆 Leaderboard</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: C.orange }}>
               <svg viewBox="0 0 24 24" width="14" height="14" stroke={C.orange} fill="none" strokeWidth="2.5">
@@ -38,24 +36,22 @@ function LeaderboardModal({ onClose, darkMode }) {
               </svg>
               This Week
             </div>
-            <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(0,31,84,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,31,84,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={16} stroke={tk.textMuted} />
             </button>
           </div>
         </div>
 
-        {/* My Rank */}
-        <div style={{ margin: '14px 16px 10px', background: 'linear-gradient(135deg,#FFF5EC,#FFEDD9)', border: `1.5px solid rgba(255,107,0,.25)`, borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ margin: '14px 16px 10px', background: darkMode ? '#1a2333' : '#FFF5EC', border: `1.5px solid rgba(255,107,0,.25)`, borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 13, fontWeight: 900, color: C.orange, fontFamily: 'monospace', minWidth: 32 }}>#407</span>
           <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg, ${C.orange}, #FF8C00)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff' }}>M</div>
           <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: tk.text }}>mrmillionx <span style={{ fontSize: 11, color: tk.textMuted, fontWeight: 500 }}>(You)</span></span>
           <span style={{ fontSize: 14, fontWeight: 900, color: C.orange, fontFamily: 'monospace' }}>$4,000</span>
         </div>
 
-        {/* Leaderboard List */}
         <div style={{ padding: '4px 16px 32px', overflowY: 'auto' }}>
           {leaderboard.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, marginBottom: 6, background: '#fafbfd', border: `1px solid ${tk.cardBorder}` }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, marginBottom: 6, background: darkMode ? 'rgba(255,255,255,0.03)' : '#fafbfd', border: `1px solid ${tk.cardBorder}` }}>
               <div style={{ width: 28, display: 'flex', justifyContent: 'center' }}>
                 {idx < 3 ? <span style={{ fontSize: 14 }}>{medals[idx]}</span> : <span style={{ fontSize: 12, fontWeight: 900, color: tk.textMuted }}>#{idx + 1}</span>}
               </div>
@@ -65,13 +61,6 @@ function LeaderboardModal({ onClose, darkMode }) {
             </div>
           ))}
         </div>
-
-        <style>{`
-          @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
-          }
-        `}</style>
       </div>
     </div>
   )
@@ -81,7 +70,6 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
   const tk = t(darkMode)
   const [toast, setToast] = useState(null)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
-  const [copied, setCopied] = useState(false)
 
   const showToastMsg = (msg) => {
     setToast(msg)
@@ -92,9 +80,7 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
 
   const copyLink = () => {
     navigator.clipboard.writeText(referralLink)
-    setCopied(true)
     showToastMsg('Link copied! 🎉')
-    setTimeout(() => setCopied(false), 2000)
   }
 
   const handleShare = () => {
@@ -135,7 +121,7 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
 
-      {/* Top Bar - No extra space */}
+      {/* Top Bar - NO USERNAME BADGE */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 20px 16px', background: tk.bg,
@@ -151,43 +137,35 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
           </svg>
         </button>
         <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Refer</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            background: C.orange, color: '#fff', padding: '4px 12px',
-            borderRadius: 50, fontSize: 12, fontWeight: 800,
-          }}>
-            {user?.username || 'USER'}
-          </div>
-          <button onClick={() => setDarkMode(!darkMode)} style={{
-            width: 38, height: 38, borderRadius: '50%',
-            background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', boxShadow: tk.iconShadow,
-          }}>
-            {darkMode ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={tk.text} strokeWidth="2">
-                <circle cx="12" cy="12" r="5"/>
-                <line x1="12" y1="1" x2="12" y2="3"/>
-                <line x1="12" y1="21" x2="12" y2="23"/>
-                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                <line x1="1" y1="12" x2="3" y2="12"/>
-                <line x1="21" y1="12" x2="23" y2="12"/>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-              </svg>
-            ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={tk.text} strokeWidth="2">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-              </svg>
-            )}
-          </button>
-        </div>
+        <button onClick={() => setDarkMode(!darkMode)} style={{
+          width: 38, height: 38, borderRadius: '50%',
+          background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', boxShadow: tk.iconShadow,
+        }}>
+          {darkMode ? (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={tk.text} strokeWidth="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={tk.text} strokeWidth="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          )}
+        </button>
       </div>
 
       <div style={{ padding: '0 16px' }}>
 
-        {/* Hero Banner - Top Earners */}
+        {/* Hero Banner - Top Earners - FIXED light mode */}
         <div onClick={() => setShowLeaderboard(true)} style={{
           background: `linear-gradient(130deg, ${C.navy} 0%, ${C.navy2} 100%)`,
           borderRadius: 24, padding: '22px 20px', marginBottom: 20,
@@ -196,7 +174,7 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
           boxShadow: '0 8px 32px rgba(0,31,84,0.28)',
         }}>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+            <div style={{ marginBottom: 6 }}>
               <span style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>Top Earners</span>
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 500, marginBottom: 12 }}>See who's crushing it this week 🏆</p>
@@ -228,7 +206,7 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Row - FIXED light/dark mode */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
           <div style={{ background: tk.card, borderRadius: 16, padding: '14px 8px 12px', textAlign: 'center', boxShadow: tk.iconShadow, border: `1.5px solid ${tk.cardBorder}` }}>
             <div style={{ fontSize: 9, fontWeight: 800, color: tk.textMuted, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Total Invites</div>
@@ -248,18 +226,18 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
           </div>
         </div>
 
-        {/* Commission Tiers */}
+        {/* Commission Tiers - FIXED light/dark mode */}
         <div style={{ background: tk.card, borderRadius: 18, padding: 18, marginBottom: 18, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
           <div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 14 }}>Commission Tiers</div>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
             {TIERS.map(tier => (
-              <div key={tier.letter} style={{ flex: 1, minWidth: 62, borderRadius: 14, padding: '14px 6px 12px', textAlign: 'center', background: '#f8f9fc', border: tier.letter === 'B' ? `2px solid ${C.orange}` : '2px solid transparent' }}>
+              <div key={tier.letter} style={{ flex: 1, minWidth: 62, borderRadius: 14, padding: '14px 6px 12px', textAlign: 'center', background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fc', border: tier.letter === 'B' ? `2px solid ${C.orange}` : '2px solid transparent' }}>
                 <span style={{ fontSize: 24, fontWeight: 900, display: 'block', marginBottom: 6, color: tier.color }}>{tier.letter}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: tk.text }}>{tier.percent}</span>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 12, color: tk.textMuted, fontStyle: 'italic', lineHeight: 1.5, background: '#f8f9fc', padding: '10px 12px', borderRadius: 12 }}>
+          <div style={{ fontSize: 12, color: tk.textMuted, fontStyle: 'italic', lineHeight: 1.5, background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fc', padding: '10px 12px', borderRadius: 12 }}>
             Your plan is Bronze — your referral commission is 20%
           </div>
         </div>
@@ -304,11 +282,11 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
         <div style={{ background: tk.card, borderRadius: 18, padding: 18, marginBottom: 20, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase' }}>My Referrals</div>
-            <span style={{ fontSize: 12, fontWeight: 700, color: C.orange, background: '#FFF5EC', borderRadius: 50, padding: '4px 14px' }}>5 people</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: C.orange, background: darkMode ? 'rgba(255,111,0,0.15)' : '#FFF5EC', borderRadius: 50, padding: '4px 14px' }}>5 people</span>
           </div>
 
           {referrals.map((ref, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: `1px solid ${tk.cardBorder}` }}>
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: idx < referrals.length - 1 ? `1px solid ${tk.cardBorder}` : 'none' }}>
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: ref.color || `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, color: '#fff' }}>{ref.initials}</div>
               <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: tk.text }}>{ref.name}</span>
               <TierDots planIndex={ref.plan} />

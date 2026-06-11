@@ -1,7 +1,7 @@
 import { t, C } from './tokens'
 
 const SERVICES = [
-  { id: 'levels',      label: 'Levels',      screen: 'levels',     icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M6 5h12v8a6 6 0 0 1-12 0z"/></svg> },
+  { id: 'levels',      label: 'Levels',      screen: 'upgrade',    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/><path d="M8 21h8"/><path d="M12 17v4"/><path d="M6 5h12v8a6 6 0 0 1-12 0z"/></svg> },
   { id: 'referral',    label: 'Referral',    screen: 'refer',      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
   { id: 'contest',     label: 'Contest',     screen: 'contest',    icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="5"/><path d="M6 12h4M8 10v4"/><circle cx="16" cy="11" r="1" fill="currentColor"/><circle cx="18" cy="13" r="1" fill="currentColor"/></svg> },
   { id: 'stake',       label: 'Vault',       screen: 'vault',      icon: <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v5c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 15v4c0 1.66 3.58 3 8 3s8-1.34 8-3v-4"/><path d="M4 10v5"/><path d="M20 10v5"/></svg> },
@@ -15,9 +15,8 @@ export default function ServicesGrid({ darkMode, onServiceClick }) {
   const tk = t(darkMode)
 
   const handleClick = (service) => {
-    // Map service labels to screen names for navigation
     const screenMap = {
-      'Levels': 'levels',
+      'Levels': 'upgrade',
       'Referral': 'refer',
       'Contest': 'contest',
       'Vault': 'vault',
