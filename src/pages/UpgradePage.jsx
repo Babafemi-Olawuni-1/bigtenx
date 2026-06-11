@@ -80,7 +80,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
 
-      {/* Top Bar - No extra space */}
+      {/* Top Bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '16px 20px 16px', background: tk.bg,
@@ -144,7 +144,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('bronze')}
             style={{
-              background: tk.card,
+              background: selectedPlan === 'bronze' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -152,7 +152,6 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
               cursor: 'pointer',
               transition: 'all 0.2s',
               boxShadow: selectedPlan === 'bronze' ? `0 4px 15px rgba(255,107,0,0.12)` : 'none',
-              background: selectedPlan === 'bronze' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
             }}
           >
             <span style={{ fontSize: 32, marginBottom: 10, display: 'block' }}>🥉</span>
@@ -164,7 +163,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('silver')}
             style={{
-              background: tk.card,
+              background: selectedPlan === 'silver' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -172,7 +171,6 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
               cursor: 'pointer',
               transition: 'all 0.2s',
               boxShadow: selectedPlan === 'silver' ? `0 4px 15px rgba(255,107,0,0.12)` : 'none',
-              background: selectedPlan === 'silver' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
             }}
           >
             <span style={{ fontSize: 32, marginBottom: 10, display: 'block' }}>🥈</span>
@@ -184,7 +182,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('gold')}
             style={{
-              background: tk.card,
+              background: selectedPlan === 'gold' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -192,7 +190,6 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
               cursor: 'pointer',
               transition: 'all 0.2s',
               boxShadow: selectedPlan === 'gold' ? `0 4px 15px rgba(255,107,0,0.12)` : 'none',
-              background: selectedPlan === 'gold' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
             }}
           >
             <span style={{ fontSize: 32, marginBottom: 10, display: 'block' }}>🥇</span>
@@ -204,7 +201,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('diamond')}
             style={{
-              background: tk.card,
+              background: selectedPlan === 'diamond' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -212,7 +209,6 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
               cursor: 'pointer',
               transition: 'all 0.2s',
               boxShadow: selectedPlan === 'diamond' ? `0 4px 15px rgba(255,107,0,0.12)` : 'none',
-              background: selectedPlan === 'diamond' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
             }}
           >
             <span style={{ fontSize: 32, marginBottom: 10, display: 'block' }}>💎</span>
