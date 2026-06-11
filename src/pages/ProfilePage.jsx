@@ -48,7 +48,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         </button>
       </div>
 
-      {/* Profile Hero Section */}
+      {/* Profile Hero Section - FIXED for light mode */}
       <div style={{
         background: `linear-gradient(160deg, ${C.navy} 0%, ${C.navy2} 100%)`,
         padding: '40px 20px 28px',
@@ -109,7 +109,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         </div>
       </div>
 
-      {/* Scrollable Content */}
+      {/* Scrollable Content - FIXED light mode text colors */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 32px' }}>
 
         {/* ACCOUNT Section */}

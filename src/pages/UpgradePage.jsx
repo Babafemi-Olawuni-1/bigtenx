@@ -144,7 +144,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('bronze')}
             style={{
-              background: selectedPlan === 'bronze' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
+              background: selectedPlan === 'bronze' ? (darkMode ? 'rgba(255,111,0,0.15)' : 'linear-gradient(135deg, #fff, #fffaf5)') : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -163,7 +163,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('silver')}
             style={{
-              background: selectedPlan === 'silver' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
+              background: selectedPlan === 'silver' ? (darkMode ? 'rgba(255,111,0,0.15)' : 'linear-gradient(135deg, #fff, #fffaf5)') : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -182,7 +182,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('gold')}
             style={{
-              background: selectedPlan === 'gold' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
+              background: selectedPlan === 'gold' ? (darkMode ? 'rgba(255,111,0,0.15)' : 'linear-gradient(135deg, #fff, #fffaf5)') : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',
@@ -201,7 +201,7 @@ export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUp
           <div 
             onClick={() => setSelectedPlan('diamond')}
             style={{
-              background: selectedPlan === 'diamond' ? 'linear-gradient(135deg, #fff, #fffaf5)' : tk.card,
+              background: selectedPlan === 'diamond' ? (darkMode ? 'rgba(255,111,0,0.15)' : 'linear-gradient(135deg, #fff, #fffaf5)') : tk.card,
               borderRadius: 16,
               padding: '20px 12px',
               textAlign: 'center',

@@ -3,7 +3,7 @@ import { C, t } from './tokens'
 import { isLevelActive } from './levels'
 
 export default function BalanceCard({ user, darkMode, onUpgrade, onFund }) {
-  const tk     = t(darkMode)
+  const tk = t(darkMode)
   const active = isLevelActive(user)
 
   // Support both snake_case (from API) and camelCase (legacy)
@@ -100,12 +100,22 @@ export default function BalanceCard({ user, darkMode, onUpgrade, onFund }) {
           </svg>
           {active ? 'Fund' : 'Upgrade'}
         </button>
-        <button style={{
-          flex: 1, height: 44, borderRadius: 13, background: 'transparent',
-          border: `1.5px solid ${darkMode ? 'rgba(255,111,0,0.38)' : 'rgba(255,255,255,0.32)'}`,
-          color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
-          cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-        }}>
+        <button
+          onClick={() => {
+            if (active) {
+              // Navigate to withdraw
+              alert('Withdraw page coming soon')
+            } else {
+              onUpgrade()
+            }
+          }}
+          style={{
+            flex: 1, height: 44, borderRadius: 13, background: 'transparent',
+            border: `1.5px solid ${darkMode ? 'rgba(255,111,0,0.38)' : 'rgba(255,255,255,0.32)'}`,
+            color: '#fff', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+          }}
+        >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 3v12M7 8l5-5 5 5"/>
             <path d="M20 21H4"/>

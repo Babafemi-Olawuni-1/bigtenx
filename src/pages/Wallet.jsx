@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { Sun, Moon, ArrowUp, ArrowDown, History, DollarSign, Award, Wallet as WalletIcon, Copy, CheckCircle, TrendingUp, Gift, ArrowLeft, X } from 'lucide-react'
+import { Sun, Moon, Copy, ArrowLeft, X } from 'lucide-react'
 import { t, C } from '../dashboard/tokens'
 
-export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgrade, onDeposit, onVirtualAccount, onBack }) {
+export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack }) {
   const tk = t(darkMode)
   const [activeTab, setActiveTab] = useState('deposit')
   const [withdrawAmount, setWithdrawAmount] = useState('')
@@ -33,7 +33,7 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
     { id: 3, type: 'withdrawal', title: 'Withdrawal Request', amount: 10.00, currency: 'usd', date: 'Jan 15, 2024' },
   ]
 
-  const showToast = (msg, type = 'success') => {
+  const showToastMsg = (msg, type = 'success') => {
     setToast({ msg, type })
     setTimeout(() => setToast(null), 3000)
   }
@@ -43,24 +43,24 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
     const usdBalance = user?.usdBalance || 0
     
     if (!amount || amount <= 0) {
-      showToast('Please enter a valid amount', 'error')
+      showToastMsg('Please enter a valid amount', 'error')
       return
     }
     if (amount < 3) {
-      showToast('Minimum withdrawal is $3', 'error')
+      showToastMsg('Minimum withdrawal is $3', 'error')
       return
     }
     if (amount > usdBalance) {
-      showToast('Insufficient balance', 'error')
+      showToastMsg('Insufficient balance', 'error')
       return
     }
     if (!bankDetails.bankName || !bankDetails.accountName || !bankDetails.accountNumber) {
-      showToast('Please fill in all bank details', 'error')
+      showToastMsg('Please fill in all bank details', 'error')
       return
     }
     
     updateUser({ usdBalance: usdBalance - amount })
-    showToast(`Withdrawal request of $${amount} submitted!`, 'success')
+    showToastMsg(`Withdrawal request of $${amount} submitted!`, 'success')
     setWithdrawAmount('')
     setBankDetails({ bankName: '', accountName: '', accountNumber: '' })
     setActiveTab('deposit')
@@ -90,12 +90,12 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
 
   const copyAccountNumber = () => {
     navigator.clipboard.writeText(generatedAccount)
-    showToast('Account number copied!', 'success')
+    showToastMsg('Account number copied!', 'success')
   }
 
   const confirmInstantTransfer = () => {
     setPaymentSuccess(true)
-    showToast('Payment confirmation received! Processing...', 'success')
+    showToastMsg('Payment confirmation received! Processing...', 'success')
     setTimeout(() => {
       setInstantAmount('')
       setShowNairaConversion(false)
@@ -107,15 +107,15 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
 
   const handlePaystackPayment = () => {
     if (!paystackAmount || parseFloat(paystackAmount) <= 0) {
-      showToast('Please enter a valid amount', 'error')
+      showToastMsg('Please enter a valid amount', 'error')
       return
     }
     if (!paystackEmail || !paystackEmail.includes('@')) {
-      showToast('Please enter a valid email address', 'error')
+      showToastMsg('Please enter a valid email address', 'error')
       return
     }
     setPaystackSuccess(true)
-    showToast(`Processing Paystack payment of $${paystackAmount}...`, 'success')
+    showToastMsg(`Processing Paystack payment of $${paystackAmount}...`, 'success')
     setTimeout(() => {
       setShowPaystackModal(false)
       setPaystackAmount('')
@@ -182,7 +182,7 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
       </div>
 
       <div style={{ padding: '0 16px' }}>
-        {/* Balance Card - FIXED for both light and dark mode */}
+        {/* Balance Card - FIXED: Always blue gradient, white text */}
         <div style={{
           margin: '0 0 20px', borderRadius: 24,
           background: `linear-gradient(135deg, ${C.navy} 0%, ${C.navy2} 100%)`,
@@ -244,12 +244,7 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
             <div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Deposit Methods</div>
             
             {/* Instant Bank Transfer */}
-            <div onClick={() => {
-              setInstantAmount('')
-              setShowNairaConversion(false)
-              setShowAccountDetails(false)
-              setPaymentSuccess(false)
-            }} style={{
+            <div style={{
               display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: `1px solid ${tk.cardBorder}`, cursor: 'pointer'
             }}>
               <div style={{
@@ -263,6 +258,16 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: tk.text }}>Instant Bank Transfer</div>
                 <div style={{ fontSize: 10, color: tk.textMuted }}>Direct transfer from your bank</div>
+              </div>
+              <div onClick={() => {
+                setInstantAmount('')
+                setShowNairaConversion(false)
+                setShowAccountDetails(false)
+                setPaymentSuccess(false)
+              }} style={{ cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={tk.textMuted} strokeWidth="2.5">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
               </div>
             </div>
 
@@ -355,7 +360,7 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onUpgr
           <div style={{ background: tk.card, borderRadius: 18, padding: 18, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 14 }}>Withdrawal</div>
             
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0' }}>
               <div style={{ width: 48, height: 48, borderRadius: 14, background: darkMode ? 'rgba(255,255,255,0.05)' : '#f0f3fa', border: `1.5px solid ${tk.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={C.orange} strokeWidth="1.8">
                   <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
