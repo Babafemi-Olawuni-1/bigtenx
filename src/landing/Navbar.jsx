@@ -38,20 +38,19 @@ export default function Navbar({ onLaunch }) {
   return (
     <>
       <nav style={navStyle}>
-        {/* Logo with text - BIG(orange)TENX */}
-        <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 0, textDecoration: 'none', margin: 0, padding: 0 }}>
+        {/* Logo with text - BIG(white)TENX(orange) - FIXED spacing */}
+        <a href="#" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', margin: 0, padding: 0 }}>
           <img 
             src="/logo.png" 
             alt="BIGTENX" 
-            style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 10, margin: 0, padding: 0 }}
+            style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 10, margin: 0, padding: 0 }}
             onError={e => { e.target.style.display = 'none' }} 
           />
           <span style={{ 
             fontFamily: "'Space Grotesk',sans-serif", 
             fontWeight: 800, 
-            fontSize: 24, 
+            fontSize: 22, 
             letterSpacing: '-0.5px',
-            marginLeft: -12,
             padding: 0
           }}>
             <span style={{ color: 'white' }}>BIG</span>
@@ -71,7 +70,7 @@ export default function Navbar({ onLaunch }) {
           ))}
         </div>
 
-        {/* Right side - removed dark mode toggle */}
+        {/* Right side */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {/* Desktop launch button */}
           <button onClick={(e) => { ripple(e); setTimeout(onLaunch, 250) }}
@@ -99,15 +98,15 @@ export default function Navbar({ onLaunch }) {
           <div className="slide-up" style={{ position: 'relative', background: '#111827', borderRadius: '24px 24px 0 0', padding: '16px 24px 40px', boxShadow: '0 -8px 40px rgba(0,0,0,0.4)' }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#374151', margin: '0 auto 20px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              {/* Drawer logo */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              {/* Drawer logo - FIXED spacing */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <img 
                   src="/logo.png" 
                   alt="BIGTENX" 
-                  style={{ width: 40, height: 40, objectFit: 'contain', borderRadius: 8, margin: 0, padding: 0 }}
+                  style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: 8, margin: 0, padding: 0 }}
                   onError={e => { e.target.style.display = 'none' }}
                 />
-                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 20, marginLeft: -10 }}>
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18 }}>
                   <span style={{ color: 'white' }}>BIG</span>
                   <span style={{ color: '#ff6f00' }}>TENX</span>
                 </span>

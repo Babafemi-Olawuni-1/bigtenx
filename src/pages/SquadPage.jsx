@@ -12,9 +12,10 @@ export default function SquadPage({ user, darkMode, setDarkMode }) {
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
+      {/* Top Bar - FIXED: no extra space */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '52px 20px 16px', background: tk.bg,
+        padding: '16px 20px 16px', background: tk.bg,
       }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Squad</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

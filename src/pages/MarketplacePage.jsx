@@ -17,10 +17,10 @@ export default function MarketplacePage({ user, darkMode, setDarkMode }) {
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
-      {/* Top Bar */}
+      {/* Top Bar - FIXED: no extra space */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '52px 20px 16px', background: tk.bg,
+        padding: '16px 20px 16px', background: tk.bg,
       }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Marketplace</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -30,7 +30,7 @@ export default function MarketplacePage({ user, darkMode, setDarkMode }) {
               width: 38, height: 38, borderRadius: '50%',
               background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: tk.shadowSm,
+              cursor: 'pointer', boxShadow: tk.iconShadow,
             }}
           >
             {darkMode ? (
@@ -54,7 +54,6 @@ export default function MarketplacePage({ user, darkMode, setDarkMode }) {
         </div>
       </div>
 
-      {/* Scroll Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
         <div style={{ margin: '0 16px 20px' }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, color: tk.text, marginBottom: 4 }}>Available (2)</h2>
@@ -64,7 +63,7 @@ export default function MarketplacePage({ user, darkMode, setDarkMode }) {
         {items.map(item => (
           <div key={item.id} style={{
             margin: '0 16px 18px', background: tk.card, borderRadius: 18,
-            padding: 16, boxShadow: tk.shadowSm, border: `1px solid ${tk.cardBorder}`,
+            padding: 16, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}`,
             display: 'flex', gap: 16,
           }}>
             <div style={{

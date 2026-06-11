@@ -12,9 +12,10 @@ export default function ExchangePage({ user, darkMode, setDarkMode }) {
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
+      {/* Top Bar - No extra space */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '52px 20px 16px', background: tk.bg,
+        padding: '16px 20px 16px', background: tk.bg,
       }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Exchange</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -48,6 +49,7 @@ export default function ExchangePage({ user, darkMode, setDarkMode }) {
         </div>
       </div>
 
+      {/* Coming Soon Content */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
@@ -60,7 +62,8 @@ export default function ExchangePage({ user, darkMode, setDarkMode }) {
           marginBottom: 24,
         }}>
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
-            <path d="M7 16V4m0 0L3 8m4-4 4 4"/><path d="M17 8v12m0 0 4-4m-4 4-4-4"/>
+            <path d="M7 16V4m0 0L3 8m4-4 4 4"/>
+            <path d="M17 8v12m0 0 4-4m-4 4-4-4"/>
           </svg>
         </div>
         <h1 style={{ fontSize: 32, fontWeight: 900, color: tk.text, marginBottom: 8 }}>Coming Soon</h1>

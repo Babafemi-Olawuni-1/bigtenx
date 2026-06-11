@@ -31,10 +31,10 @@ export default function ContestPage({ user, darkMode, setDarkMode }) {
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
-      {/* Top Bar */}
+      {/* Top Bar - FIXED: no extra space */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '52px 20px 16px', background: tk.bg,
+        padding: '16px 20px 16px', background: tk.bg,
       }}>
         <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Contest</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -44,7 +44,7 @@ export default function ContestPage({ user, darkMode, setDarkMode }) {
               width: 38, height: 38, borderRadius: '50%',
               background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', boxShadow: tk.shadowSm,
+              cursor: 'pointer', boxShadow: tk.iconShadow,
             }}
           >
             {darkMode ? (
@@ -68,19 +68,19 @@ export default function ContestPage({ user, darkMode, setDarkMode }) {
         </div>
       </div>
 
-      {/* Scroll Content */}
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 100 }}>
         {contests.map(contest => (
           <div key={contest.id} style={{
             margin: '0 16px 18px', background: tk.card, borderRadius: 18,
-            padding: 20, boxShadow: tk.shadowSm, border: `1px solid ${tk.cardBorder}`,
+            padding: 20, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}`,
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ marginBottom: 8 }}>
               <span style={{ fontSize: 16, fontWeight: 800, color: tk.text }}>{contest.title}</span>
             </div>
             <div style={{
               fontSize: 12, color: tk.text, fontWeight: 600, marginBottom: 16,
-              background: '#f8f9fc', padding: '8px 12px', borderRadius: 12,
+              background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fc',
+              padding: '8px 12px', borderRadius: 12,
             }}>{contest.description}</div>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: `1px solid ${tk.cardBorder}` }}>
