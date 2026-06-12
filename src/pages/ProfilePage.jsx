@@ -48,16 +48,18 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         </button>
       </div>
 
-      {/* Profile Hero Section - FIXED for light mode */}
+      {/* Profile Hero Section - FIXED: Always navy blue gradient */}
       <div style={{
-        background: `linear-gradient(160deg, ${C.navy} 0%, ${C.navy2} 100%)`,
+        background: `linear-gradient(160deg, #001F54 0%, #002266 100%)`,
         padding: '40px 20px 28px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         position: 'relative', overflow: 'hidden',
       }}>
+        {/* Decorative circles */}
         <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,.04)' }} />
         <div style={{ position: 'absolute', bottom: -30, left: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,107,0,.08)' }} />
 
+        {/* Avatar */}
         <div style={{ position: 'relative', marginBottom: 12 }}>
           <div style={{
             width: 80, height: 80, borderRadius: '50%',
@@ -71,7 +73,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
           <div style={{
             position: 'absolute', bottom: -2, right: -2,
             width: 28, height: 28, borderRadius: '50%',
-            background: C.orange, border: `2.5px solid ${C.navy}`,
+            background: C.orange, border: `2.5px solid #001F54`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 11, fontWeight: 900, color: '#fff',
           }}>
@@ -79,9 +81,12 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
           </div>
         </div>
 
+        {/* Username */}
         <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-.02em', marginBottom: 6 }}>
           {user?.username || 'mrmillionx'}
         </span>
+
+        {/* Country Tag */}
         <span style={{
           display: 'inline-flex', alignItems: 'center', gap: 5,
           background: 'rgba(255,255,255,.12)', borderRadius: 50, padding: '4px 12px',
@@ -91,6 +96,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
           🇳🇬 {user?.country || 'Nigeria'}
         </span>
 
+        {/* Stats Row */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>🔥 {getStreak()}</div>
@@ -109,7 +115,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         </div>
       </div>
 
-      {/* Scrollable Content - FIXED light mode text colors */}
+      {/* Scrollable Content */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 32px' }}>
 
         {/* ACCOUNT Section */}
