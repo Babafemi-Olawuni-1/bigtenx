@@ -1,67 +1,211 @@
+// AdminLogin.jsx - FIXED (sends email + password)
 import { useState } from 'react'
-import { Mail, Lock, Eye, EyeOff, Loader2, Zap } from 'lucide-react'
-
-const O = '#ff6f00'
-const B = '#001F54'
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname.startsWith('192.168.')
-const API = isLocal ? `http://${window.location.hostname}/bigtenx/bigtenx/api` : `${window.location.origin}/api`
+import { API, O } from './adminUtils'
+import { Shield, Eye, EyeOff, Lock, Mail } from 'lucide-react'
 
 export default function AdminLogin({ onLogin }) {
-  const [email, setEmail]     = useState('')
-  const [pass, setPass]       = useState('')
-  const [show, setShow]       = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); setError(''); setLoading(true)
+    e.preventDefault()
+    if (!email || !password) {
+      setError('Enter both email and password')
+      return
+    }
+    setLoading(true)
+    setError('')
     try {
-      const res  = await fetch(`${API}/admin/login.php`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password: pass }) })
+      const res = await fetch(`${API}/admin/login.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
       const data = await res.json()
-      if (data.success) onLogin(data.token)
-      else setError(data.message)
-    } catch { setError('Cannot reach server.') }
-    finally { setLoading(false) }
+      if (data.success) {
+        onLogin(data.token)
+      } else {
+        setError(data.message || 'Invalid credentials')
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const inp = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '11px 12px 11px 38px', color: 'white', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', transition: 'border-color 0.2s' }
-
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0f1e', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: "'Sora',sans-serif" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Space+Grotesk:wght@700;800&display=swap');*{box-sizing:border-box;}`}</style>
-      <div style={{ width: '100%', maxWidth: 380, background: '#111827', borderRadius: 24, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.5)' }}>
-        <div style={{ background: `linear-gradient(135deg,${B},#0a3080)`, padding: '28px 32px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: O, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={20} color="white" fill="white" />
+    <div style={{ 
+      minHeight: '100vh', 
+      background: '#F7F8FC', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      padding: 24 
+    }}>
+      <div style={{ maxWidth: 400, width: '100%' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ 
+            width: 64, height: 64, borderRadius: 18, 
+            background: `linear-gradient(135deg, ${O}, #FF9A00)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+            boxShadow: `0 8px 24px rgba(255,111,0,0.25)`
+          }}>
+            <Shield size={32} color="#fff" />
           </div>
-          <div>
-            <p style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, fontSize: 18, color: 'white', margin: 0 }}><span style={{ color: "#ff6f00" }}>IG</span><span style={{ color: "white" }}>TENX</span> Admin</p>
-            <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, margin: '2px 0 0' }}>Restricted access</p>
-          </div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#001F54', marginBottom: 6 }}>
+            BigTen<span style={{ color: O }}>X</span>
+          </h1>
+          <p style={{ fontSize: 13, color: '#8899AA' }}>Admin Dashboard Access</p>
         </div>
-        <form onSubmit={handleSubmit} style={{ padding: '28px 32px' }}>
-          {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '8px 12px', marginBottom: 14 }}><p style={{ color: '#f87171', fontSize: 12, margin: 0 }}>{error}</p></div>}
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Email</label>
+
+        <form onSubmit={handleSubmit} style={{ 
+          background: '#fff', 
+          borderRadius: 28, 
+          padding: 32, 
+          border: '1px solid #E9EDF2',
+          boxShadow: '0 8px 32px rgba(0,31,84,0.06)'
+        }}>
+          {/* Email Field */}
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: '#001F54', 
+              marginBottom: 8 
+            }}>
+              Email Address
+            </label>
             <div style={{ position: 'relative' }}>
-              <Mail size={13} color="rgba(255,255,255,0.22)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="admin@bigtenx.com" required style={inp} onFocus={e => e.target.style.borderColor = O} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
+              <Mail size={18} style={{ 
+                position: 'absolute', 
+                left: 14, 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: '#8899AA' 
+              }} />
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  padding: '13px 44px 13px 44px', 
+                  borderRadius: 14, 
+                  border: '1px solid #E9EDF2', 
+                  fontSize: 14, 
+                  fontFamily: 'inherit', 
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                placeholder="admin@bigtenx.com"
+                autoFocus
+                onFocus={e => e.target.style.borderColor = O}
+                onBlur={e => e.target.style.borderColor = '#E9EDF2'}
+              />
             </div>
           </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', color: 'rgba(255,255,255,0.45)', fontSize: 10, fontWeight: 600, marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Password</label>
+
+          {/* Password Field */}
+          <div style={{ marginBottom: 24 }}>
+            <label style={{ 
+              display: 'block', 
+              fontSize: 12, 
+              fontWeight: 600, 
+              color: '#001F54', 
+              marginBottom: 8 
+            }}>
+              Password
+            </label>
             <div style={{ position: 'relative' }}>
-              <Lock size={13} color="rgba(255,255,255,0.22)" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-              <input type={show ? 'text' : 'password'} value={pass} onChange={e => setPass(e.target.value)} placeholder="Admin password" required style={{ ...inp, paddingRight: 38 }} onFocus={e => e.target.style.borderColor = O} onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.1)'} />
-              <button type="button" onClick={() => setShow(s => !s)} style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}>
-                {show ? <EyeOff size={13} color="rgba(255,255,255,0.3)" /> : <Eye size={13} color="rgba(255,255,255,0.3)" />}
+              <Lock size={18} style={{ 
+                position: 'absolute', 
+                left: 14, 
+                top: '50%', 
+                transform: 'translateY(-50%)', 
+                color: '#8899AA' 
+              }} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                style={{ 
+                  width: '100%', 
+                  padding: '13px 44px 13px 44px', 
+                  borderRadius: 14, 
+                  border: '1px solid #E9EDF2', 
+                  fontSize: 14, 
+                  fontFamily: 'inherit', 
+                  outline: 'none',
+                  transition: 'border-color 0.2s'
+                }}
+                placeholder="Enter your password"
+                onFocus={e => e.target.style.borderColor = O}
+                onBlur={e => e.target.style.borderColor = '#E9EDF2'}
+              />
+              <button 
+                type="button" 
+                onClick={() => setShowPassword(!showPassword)} 
+                style={{ 
+                  position: 'absolute', 
+                  right: 14, 
+                  top: '50%', 
+                  transform: 'translateY(-50%)', 
+                  background: 'none', 
+                  border: 'none', 
+                  cursor: 'pointer' 
+                }}
+              >
+                {showPassword ? <EyeOff size={18} color="#8899AA" /> : <Eye size={18} color="#8899AA" />}
               </button>
             </div>
           </div>
-          <button type="submit" disabled={loading} style={{ width: '100%', background: loading ? `${O}60` : O, color: 'white', border: 'none', borderRadius: 10, padding: '13px', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, fontFamily: 'inherit', boxShadow: `0 4px 18px ${O}40` }}>
-            {loading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Signing in...</> : 'Sign In to Admin'}
+
+          {error && (
+            <div style={{ 
+              background: 'rgba(239,68,68,0.1)', 
+              borderRadius: 12, 
+              padding: '12px 16px',
+              marginBottom: 20,
+              border: '1px solid rgba(239,68,68,0.2)'
+            }}>
+              <p style={{ color: '#EF4444', fontSize: 12, margin: 0 }}>{error}</p>
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            disabled={loading} 
+            style={{ 
+              width: '100%', 
+              background: O, 
+              border: 'none', 
+              borderRadius: 14, 
+              padding: '14px', 
+              color: '#fff', 
+              fontWeight: 700, 
+              fontSize: 14, 
+              cursor: loading ? 'not-allowed' : 'pointer', 
+              opacity: loading ? 0.7 : 1,
+              transition: 'opacity 0.2s'
+            }}
+          >
+            {loading ? 'Verifying...' : 'Access Dashboard'}
           </button>
-          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+
+          <p style={{ 
+            textAlign: 'center', 
+            fontSize: 11, 
+            color: '#8899AA', 
+            marginTop: 20 
+          }}>
+            Secure admin area • BigTenX Platform
+          </p>
         </form>
       </div>
     </div>

@@ -1,3 +1,4 @@
+// App.jsx - COMPLETE FIX
 import { useEffect } from 'react'
 import { Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import useStore from './store/useStore'
@@ -11,12 +12,6 @@ function App() {
   const navigate = useNavigate()
   const location = useLocation()
 
-  // On mount: if there's no user in sessionStorage, make sure we're clean
-  // (sessionStorage is already cleared on tab close, this is just a safety net)
-  useEffect(() => {
-    // Nothing to restore from localStorage — sessionStorage handles it automatically
-  }, [])
-
   const handleLogin = (userData) => {
     setUser(userData)
     navigate('/dashboard')
@@ -24,13 +19,14 @@ function App() {
 
   const handleLogout = () => {
     logout()
-    // Clear any task completion cache on logout
     sessionStorage.removeItem('bigtenx_completed_tasks')
     navigate('/')
   }
 
-  const isAdminRoute = location.pathname.startsWith('/admin')
-  if (isAdminRoute) return <AdminApp />
+  // IMPORTANT: Check for admin route FIRST - before any redirects
+  if (location.pathname === '/admin' || location.pathname.startsWith('/admin/')) {
+    return <AdminApp />
+  }
 
   // If logged in and trying to access auth pages, redirect to dashboard
   if (user && (location.pathname === '/login' || location.pathname === '/signup')) {
