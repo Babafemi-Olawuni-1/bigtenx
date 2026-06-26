@@ -29,6 +29,9 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
+          protocol: ftps
+          passive: true
+          timeout: 60000
           local-dir: dist/
           server-dir: /public_html/
 
@@ -39,6 +42,9 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
+          protocol: ftps
+          passive: true
+          timeout: 60000
           local-dir: api/
           server-dir: /public_html/api/
 
@@ -49,5 +55,8 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT }}
+          protocol: ftps
+          passive: true
+          timeout: 60000
           local-dir: config/
           server-dir: /public_html/config/
