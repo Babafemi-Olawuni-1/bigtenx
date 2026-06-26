@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API, O } from './adminUtils'
 import { Users, Zap, TrendingUp, CheckSquare, DollarSign, Coins, RefreshCw, Eye, 
-         Wallet, Store, Crown, Share2, PiggyBank, Star, Bell, Photo, 
+         Wallet, Store, Crown, Share2, PiggyBank, Star, Bell, Image, 
          BarChart3, Settings, ChevronRight, LayoutDashboard, Gift, Clock,
          Trophy, ClipboardList, UsersRound, List } from 'lucide-react'
 
