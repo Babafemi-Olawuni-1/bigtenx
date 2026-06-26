@@ -14,7 +14,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Fix Vite Production
+        run: chmod +x ./node_modules/.bin/vite
 
       - name: Build Project
         run: npm run build
