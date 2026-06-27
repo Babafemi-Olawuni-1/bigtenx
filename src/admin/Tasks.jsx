@@ -1,18 +1,96 @@
-// Tasks.jsx - COMPLETELY FIXED (no syntax errors)
-import { useState, useEffect, useCallback } from 'react'
+// Tasks.jsx - PREMIUM FIN-TECH ADMIN UI
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { API, O } from './adminUtils'
-import { Plus, Edit, Trash2, Pause, Play, Copy, Calendar, Filter, X } from 'lucide-react'
+import { 
+  Plus, Edit, Trash2, Pause, Play, Copy, Calendar, Filter, X,
+  Search, Users, CheckCircle, Clock, Tag, Layers, Eye, 
+  TrendingUp, DollarSign, Zap, Activity, ChevronDown,
+  AlertCircle, RefreshCw
+} from 'lucide-react'
 
-function Badge({ children, color, bg }) {
+// ─── Premium Badge Component ──────────────────────────────────────────────────
+function PremiumBadge({ children, color = O, bg = `${O}10`, border = `${O}20` }) {
   return (
     <span style={{
-      background: bg || `${color}15`,
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: 600,
+      background: bg,
       color: color,
-      borderRadius: 30,
-      padding: '3px 10px',
-      fontSize: 10,
-      fontWeight: 700
-    }}>{children}</span>
+      border: `1px solid ${border}`,
+      letterSpacing: '0.01em'
+    }}>
+      {children}
+    </span>
+  )
+}
+
+// ─── Status Badge ─────────────────────────────────────────────────────────────
+function StatusBadge({ status }) {
+  const configs = {
+    active: { bg: '#10B98110', color: '#10B981', border: '#10B98120', label: 'Active', dot: '#10B981' },
+    paused: { bg: '#F59E0B10', color: '#F59E0B', border: '#F59E0B20', label: 'Paused', dot: '#F59E0B' },
+    completed: { bg: '#6366F110', color: '#6366F1', border: '#6366F120', label: 'Completed', dot: '#6366F1' }
+  }
+  const config = configs[status] || configs.active
+
+  return (
+    <span style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '4px 12px',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: 600,
+      background: config.bg,
+      color: config.color,
+      border: `1px solid ${config.border}`,
+    }}>
+      <span style={{
+        width: '6px',
+        height: '6px',
+        borderRadius: '50%',
+        background: config.dot,
+        display: 'inline-block'
+      }} />
+      {config.label}
+    </span>
+  )
+}
+
+// ─── Analytics Card ──────────────────────────────────────────────────────────
+function AnalyticsStat({ icon: Icon, label, value, color = O, sub }) {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+      padding: '8px 0',
+      borderBottom: '1px solid #F1F4F9',
+    }}>
+      <div style={{
+        width: '36px',
+        height: '36px',
+        borderRadius: '10px',
+        background: `${color}10`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}>
+        <Icon size={16} color={color} />
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: '12px', fontWeight: 500, color: '#5A6E8A' }}>{label}</div>
+        <div style={{ fontSize: '18px', fontWeight: 700, color: '#0A1E3C' }}>{value}</div>
+        {sub && <div style={{ fontSize: '11px', color: '#8899AA', marginTop: 2 }}>{sub}</div>}
+      </div>
+    </div>
   )
 }
 
@@ -22,6 +100,8 @@ export default function Tasks({ token, onNewTask, onEditTask }) {
   const [filter, setFilter] = useState('all')
   const [selectedTask, setSelectedTask] = useState(null)
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false)
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token }
 
   const loadTasks = useCallback(async () => {
@@ -62,188 +142,425 @@ export default function Tasks({ token, onNewTask, onEditTask }) {
     setShowAnalyticsModal(true)
   }
 
-  const filteredTasks = filter === 'all' ? tasks : tasks.filter(t => t.type === filter)
+  const filteredTasks = useMemo(() => {
+    let result = tasks
 
-  const getBadgeClass = (task) => {
-    if (!task.active) return { bg: '#DC262615', color: '#DC2626' }
-    if (task.type === 'daily') return { bg: '#10B98115', color: '#10B981' }
-    return { bg: `${O}15`, color: O }
+    // Apply filter
+    if (filter === 'daily') result = result.filter(t => t.type === 'daily')
+    else if (filter === 'hot') result = result.filter(t => t.type === 'hot')
+    else if (filter === 'active') result = result.filter(t => t.active)
+    else if (filter === 'paused') result = result.filter(t => !t.active)
+
+    // Apply search
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter(t => 
+        t.title?.toLowerCase().includes(query) ||
+        t.platform?.toLowerCase().includes(query) ||
+        t.description?.toLowerCase().includes(query)
+      )
+    }
+
+    return result
+  }, [tasks, filter, searchQuery])
+
+  const getTaskStatus = (task) => {
+    if (!task.active) return 'paused'
+    return 'active'
   }
 
-  const getBadgeText = (task) => {
-    if (!task.active) return 'PAUSED'
-    if (task.type === 'daily') return 'Daily'
-    return 'Hot Offer'
+  const getTypeColor = (type) => {
+    return type === 'daily' ? '#10B981' : '#8B5CF6'
   }
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: 60, color: '#8899AA' }}>Loading tasks...</div>
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        minHeight: '60vh',
+        color: '#8899AA',
+        fontSize: '14px',
+        fontWeight: 500
+      }}>
+        <RefreshCw size={20} style={{ marginRight: 12, animation: 'spin 1s linear infinite' }} />
+        Loading tasks...
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: 20 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: '#001F54', margin: 0 }}>Task Management</h1>
-        <p style={{ fontSize: 12, color: '#8899AA', marginTop: 4 }}>Create, edit, and manage user tasks</p>
-      </div>
-
-      {/* Filter and Add Button */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+    <div style={{ maxWidth: '1200px' }}>
+      {/* ─── HEADER ─────────────────────────────────────────────────────────── */}
+      <div style={{ marginBottom: '28px' }}>
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'flex-start',
+          marginBottom: '20px'
+        }}>
+          <div>
+            <h1 style={{ 
+              fontSize: '28px', 
+              fontWeight: 700, 
+              color: '#0A1E3C',
+              letterSpacing: '-0.02em',
+              marginBottom: '4px'
+            }}>
+              Task Management
+            </h1>
+            <p style={{ fontSize: '14px', color: '#5A6E8A', fontWeight: 400 }}>
+              Manage tasks, track completion, and monitor performance
+            </p>
+          </div>
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => onNewTask && onNewTask()}
             style={{
-              padding: '8px 16px', borderRadius: 30, border: 'none',
-              background: filter === 'all' ? O : '#F7F8FC',
-              color: filter === 'all' ? '#fff' : '#5A6E8A',
-              fontWeight: 600, fontSize: 12, cursor: 'pointer'
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: O,
+              color: '#fff',
+              border: 'none',
+              borderRadius: '12px',
+              padding: '10px 20px',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all 0.2s',
+              boxShadow: '0 2px 8px rgba(255,111,0,0.25)'
             }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            All Tasks
-          </button>
-          <button
-            onClick={() => setFilter('daily')}
-            style={{
-              padding: '8px 16px', borderRadius: 30, border: 'none',
-              background: filter === 'daily' ? O : '#F7F8FC',
-              color: filter === 'daily' ? '#fff' : '#5A6E8A',
-              fontWeight: 600, fontSize: 12, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 4
-            }}
-          >
-            <Calendar size={12} /> Daily
-          </button>
-          <button
-            onClick={() => setFilter('hot')}
-            style={{
-              padding: '8px 16px', borderRadius: 30, border: 'none',
-              background: filter === 'hot' ? O : '#F7F8FC',
-              color: filter === 'hot' ? '#fff' : '#5A6E8A',
-              fontWeight: 600, fontSize: 12, cursor: 'pointer',
-              display: 'flex', alignItems: 'center', gap: 4
-            }}
-          >
-            <Filter size={12} /> Hot Offers
+            <Plus size={18} /> New Task
           </button>
         </div>
-        <button
-          onClick={() => onNewTask && onNewTask()}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            background: O, border: 'none', borderRadius: 30,
-            padding: '8px 20px', color: '#fff', fontWeight: 700,
-            fontSize: 13, cursor: 'pointer'
-          }}
-        >
-          <Plus size={16} /> New Task
-        </button>
+
+        {/* ─── FILTER BAR ──────────────────────────────────────────────────── */}
+        <div style={{
+          display: 'flex',
+          gap: '12px',
+          flexWrap: 'wrap',
+          alignItems: 'center'
+        }}>
+          {/* Search */}
+          <div style={{
+            position: 'relative',
+            flex: '1',
+            minWidth: '200px',
+            maxWidth: '320px'
+          }}>
+            <Search size={16} style={{
+              position: 'absolute',
+              left: '14px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              color: '#8899AA'
+            }} />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '10px 16px 10px 42px',
+                borderRadius: '12px',
+                border: '1.5px solid #E9EDF2',
+                fontSize: '13px',
+                fontFamily: 'inherit',
+                background: '#FFFFFF',
+                color: '#0A1E3C',
+                outline: 'none',
+                transition: 'border-color 0.2s'
+              }}
+              onFocus={e => e.target.style.borderColor = O}
+              onBlur={e => e.target.style.borderColor = '#E9EDF2'}
+            />
+          </div>
+
+          {/* Filter Buttons */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            {[
+              { id: 'all', label: 'All' },
+              { id: 'daily', label: 'Daily' },
+              { id: 'hot', label: 'Hot Offers' },
+              { id: 'active', label: 'Active' },
+              { id: 'paused', label: 'Paused' }
+            ].map(f => (
+              <button
+                key={f.id}
+                onClick={() => setFilter(f.id)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '30px',
+                  border: '1.5px solid',
+                  borderColor: filter === f.id ? O : '#E9EDF2',
+                  background: filter === f.id ? `${O}10` : '#fff',
+                  color: filter === f.id ? O : '#5A6E8A',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  transition: 'all 0.15s'
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Tasks List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* ─── TASK LIST ────────────────────────────────────────────────────── */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {filteredTasks.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, background: '#fff', borderRadius: 24, border: '1px solid #E9EDF2', color: '#8899AA' }}>
-            No tasks found. Create your first task!
+          <div style={{
+            textAlign: 'center',
+            padding: '60px 20px',
+            background: '#fff',
+            borderRadius: '20px',
+            border: '1px solid #E9EDF2',
+            color: '#8899AA'
+          }}>
+            <Activity size={48} color="#CCDDEE" style={{ marginBottom: 12 }} />
+            <p style={{ fontSize: '15px', fontWeight: 500, color: '#5A6E8A', marginBottom: 4 }}>
+              No tasks found
+            </p>
+            <p style={{ fontSize: '13px' }}>Create your first task to get started</p>
           </div>
         )}
+
         {filteredTasks.map(task => {
-          const badge = getBadgeClass(task)
+          const status = getTaskStatus(task)
+          const typeColor = getTypeColor(task.type)
+          const completionRate = task.participants > 0 
+            ? ((task.completed / task.participants) * 100).toFixed(1) 
+            : 0
+
           return (
             <div 
               key={task.id} 
               onClick={() => showTaskAnalytics(task)}
               style={{
-                background: '#fff', borderRadius: 20, padding: 14,
-                border: task.active ? `1px solid ${O}30` : '1px solid #E9EDF2',
-                boxShadow: '0 2px 8px rgba(0,31,84,0.04)',
+                background: '#fff',
+                borderRadius: '20px',
+                padding: '20px 24px',
+                border: '1px solid #E9EDF2',
                 cursor: 'pointer',
-                transition: 'transform 0.2s'
+                transition: 'all 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.02)'
               }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+              onMouseEnter={e => {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.06)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)'
+              }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+              {/* ─── CARD HEADER ─────────────────────────────────────────── */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                marginBottom: '14px'
+              }}>
                 <div style={{ flex: 1 }}>
-                  {/* Title and badges */}
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                    <span style={{ fontWeight: 800, fontSize: 15, color: '#001F54' }}>{task.title}</span>
-                    <Badge color={badge.color} bg={badge.bg}>
-                      {getBadgeText(task)}
-                    </Badge>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    flexWrap: 'wrap',
+                    marginBottom: '6px'
+                  }}>
+                    <h3 style={{
+                      fontSize: '17px',
+                      fontWeight: 700,
+                      color: '#0A1E3C',
+                      margin: 0,
+                      letterSpacing: '-0.01em'
+                    }}>
+                      {task.title}
+                    </h3>
+                    <PremiumBadge color={typeColor} bg={`${typeColor}10`} border={`${typeColor}20`}>
+                      {task.type === 'daily' ? 'Daily' : 'Hot Offer'}
+                    </PremiumBadge>
+                    <StatusBadge status={status} />
                   </div>
-                  {/* Platform */}
-                  <div style={{ fontSize: 11, color: '#8899AA', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <span>🌐 {task.platform}</span>
-                    {task.type === 'hot' && task.active && (
-                      <span style={{ background: `${O}1A`, padding: '2px 8px', borderRadius: 12, fontSize: 10 }}>
-                        🔥 {task.hotCount || 0} users
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '16px',
+                    flexWrap: 'wrap',
+                    fontSize: '13px',
+                    color: '#5A6E8A'
+                  }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Tag size={13} /> {task.platform}
+                    </span>
+                    {task.code_type === 'universal' && task.verify_code && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleCopyCode(task.verify_code) }}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          background: 'none',
+                          border: 'none',
+                          color: O,
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <Copy size={12} /> {task.verify_code}
+                      </button>
+                    )}
+                    {task.code_type === 'individual' && (
+                      <span style={{ fontSize: '12px', color: '#5A6E8A' }}>
+                        <Layers size={12} /> {task.individual_codes_count || 0} codes
                       </span>
                     )}
                   </div>
-                  {/* Reward */}
-                  <div style={{ fontSize: 13, fontWeight: 700, color: O, marginBottom: 8 }}>
-                    🎁 Reward: {task.reward_type === 'cash' ? `$${task.reward_xp}` : `${task.reward_xp} XP`}
-                  </div>
-                  {/* Codes */}
-                  <div style={{ fontSize: 11, color: '#001F54', background: '#F7F8FC', display: 'inline-block', padding: '4px 10px', borderRadius: 20 }}>
-                    📱 Codes ({task.verify_code || task.individual_codes_count || 0})
-                  </div>
-                  {/* Stats Preview */}
-                  <div style={{ display: 'flex', gap: 16, marginTop: 10, paddingTop: 10, borderTop: '1px solid #E9EDF2', fontSize: 11, color: '#8899AA' }}>
-                    <div>👥 <span style={{ color: '#001F54', fontWeight: 700 }}>{task.participants?.toLocaleString() || 0}</span> participated</div>
-                    <div>✅ <span style={{ color: '#001F54', fontWeight: 700 }}>{task.completed?.toLocaleString() || 0}</span> completed</div>
-                  </div>
-                  {/* Universal code - click to copy */}
-                  {task.code_type === 'universal' && task.verify_code && (
-                    <button
-                      onClick={(e) => { e.stopPropagation(); handleCopyCode(task.verify_code) }}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 4, marginTop: 8,
-                        background: `${O}12`, border: 'none', borderRadius: 8,
-                        padding: '4px 12px', color: O, fontSize: 11,
-                        fontWeight: 700, cursor: 'pointer'
-                      }}
-                    >
-                      <Copy size={11} /> {task.verify_code}
-                    </button>
-                  )}
                 </div>
+              </div>
 
-                {/* Action Buttons - prevent click from triggering card click */}
-                <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handleToggleTask(task.id) }}
-                    title={task.active ? 'Pause' : 'Activate'}
-                    style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: task.active ? `${O}15` : '#F7F8FC',
-                      border: `1px solid ${task.active ? `${O}30` : '#E9EDF2'}`,
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}
-                  >
-                    {task.active ? <Pause size={15} color={O} /> : <Play size={15} color="#10B981" />}
-                  </button>
+              {/* ─── CARD METRICS ────────────────────────────────────────── */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                gap: '16px',
+                padding: '16px 0',
+                borderTop: '1px solid #F1F4F9',
+                borderBottom: '1px solid #F1F4F9',
+                marginBottom: '14px'
+              }}>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#8899AA', fontWeight: 500 }}>Participants</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A1E3C' }}>
+                    {task.participants?.toLocaleString() || 0}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#8899AA', fontWeight: 500 }}>Completed</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A1E3C' }}>
+                    {task.completed?.toLocaleString() || 0}
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#8899AA', fontWeight: 500 }}>Completion Rate</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A1E3C' }}>
+                    {completionRate}%
+                  </div>
+                </div>
+                {task.type === 'hot' && task.remaining_slots !== null && (
+                  <div>
+                    <div style={{ fontSize: '11px', color: '#8899AA', fontWeight: 500 }}>Remaining Slots</div>
+                    <div style={{ fontSize: '16px', fontWeight: 700, color: '#0A1E3C' }}>
+                      {task.remaining_slots}
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <div style={{ fontSize: '11px', color: '#8899AA', fontWeight: 500 }}>Reward</div>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: O }}>
+                    {task.reward_type === 'cash' ? `$${task.reward_xp}` : `${task.reward_xp} XP`}
+                  </div>
+                </div>
+              </div>
+
+              {/* ─── CARD FOOTER ─────────────────────────────────────────── */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <div style={{ fontSize: '12px', color: '#8899AA' }}>
+                  <Calendar size={12} style={{ display: 'inline', marginRight: '4px' }} />
+                  Created {task.created_at ? new Date(task.created_at).toLocaleDateString() : '—'}
+                </div>
+                <div style={{
+                  display: 'flex',
+                  gap: '8px',
+                  alignItems: 'center'
+                }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); onEditTask && onEditTask(task) }}
-                    title="Edit"
                     style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.2)',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      background: 'none',
+                      border: '1px solid #E9EDF2',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#5A6E8A',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: 'all 0.15s'
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F7F8FC' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
                   >
-                    <Edit size={15} color="#6366f1" />
+                    <Edit size={14} /> Edit
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleToggleTask(task.id) }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      background: 'none',
+                      border: '1px solid #E9EDF2',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: task.active ? '#F59E0B' : '#10B981',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: 'all 0.15s'
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F7F8FC' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+                  >
+                    {task.active ? <Pause size={14} /> : <Play size={14} />}
+                    {task.active ? 'Pause' : 'Resume'}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteTask(task.id) }}
-                    title="Delete"
                     style={{
-                      width: 36, height: 36, borderRadius: 10,
-                      background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)',
-                      cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      background: 'none',
+                      border: '1px solid rgba(239,68,68,0.2)',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      color: '#EF4444',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      transition: 'all 0.15s'
                     }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.05)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
                   >
-                    <Trash2 size={15} color="#f87171" />
+                    <Trash2 size={14} /> Delete
                   </button>
                 </div>
               </div>
@@ -252,66 +569,126 @@ export default function Tasks({ token, onNewTask, onEditTask }) {
         })}
       </div>
 
-      {/* Analytics Modal */}
+      {/* ─── ANALYTICS DRAWER ────────────────────────────────────────────── */}
       {showAnalyticsModal && selectedTask && (
         <div
           onClick={() => setShowAnalyticsModal(false)}
           style={{
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.7)', zIndex: 1000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px'
           }}
         >
           <div
             onClick={e => e.stopPropagation()}
             style={{
-              background: '#fff', width: '100%', maxWidth: 380, borderRadius: 28,
-              overflow: 'hidden', maxHeight: '90vh', overflowY: 'auto'
+              background: '#fff',
+              width: '100%',
+              maxWidth: '480px',
+              borderRadius: '24px',
+              overflow: 'hidden',
+              boxShadow: '0 24px 48px rgba(0,0,0,0.15)',
+              maxHeight: '90vh',
+              overflowY: 'auto'
             }}
           >
+            {/* Modal Header */}
             <div style={{
-              padding: '18px 20px', borderBottom: '1px solid #E9EDF2',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-              background: '#fff'
+              padding: '20px 24px',
+              borderBottom: '1px solid #E9EDF2',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
             }}>
-              <h3 style={{ fontSize: 18, fontWeight: 800, color: '#001F54' }}>{selectedTask.title}</h3>
-              <button onClick={() => setShowAnalyticsModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                <X size={20} color="#8899AA" />
+              <div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#0A1E3C', margin: 0 }}>
+                  {selectedTask.title}
+                </h3>
+                <p style={{ fontSize: '13px', color: '#5A6E8A', marginTop: '2px' }}>
+                  {selectedTask.platform} · {selectedTask.type === 'daily' ? 'Daily' : 'Hot Offer'}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAnalyticsModal(false)}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#8899AA'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#F7F8FC'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <X size={18} />
               </button>
             </div>
-            <div style={{ padding: 20 }}>
-              <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>👥 Total Participants</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: O }}>{selectedTask.participants?.toLocaleString() || 0}</span>
-              </div>
-              <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>✅ Completed</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: O }}>{selectedTask.completed?.toLocaleString() || 0}</span>
-              </div>
-              <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>📊 Completion Rate</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: O }}>
-                  {selectedTask.participants > 0 
-                    ? ((selectedTask.completed / selectedTask.participants) * 100).toFixed(1) 
-                    : 0}%
-                </span>
-              </div>
-              <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>🎁 Reward</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: O }}>
-                  {selectedTask.reward_type === 'cash' ? `$${selectedTask.reward_xp}` : `${selectedTask.reward_xp} XP`}
-                </span>
-              </div>
-              <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>📱 Codes Remaining</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: O }}>{selectedTask.codes || 0}</span>
-              </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '24px' }}>
+              <AnalyticsStat 
+                icon={Users} 
+                label="Total Participants" 
+                value={selectedTask.participants?.toLocaleString() || 0}
+                color="#6366F1"
+              />
+              <AnalyticsStat 
+                icon={CheckCircle} 
+                label="Completed" 
+                value={selectedTask.completed?.toLocaleString() || 0}
+                color="#10B981"
+              />
+              <AnalyticsStat 
+                icon={TrendingUp} 
+                label="Completion Rate" 
+                value={selectedTask.participants > 0 
+                  ? `${((selectedTask.completed / selectedTask.participants) * 100).toFixed(1)}%` 
+                  : '0%'}
+                color="#8B5CF6"
+              />
+              <AnalyticsStat 
+                icon={DollarSign} 
+                label="Reward" 
+                value={selectedTask.reward_type === 'cash' 
+                  ? `$${selectedTask.reward_xp}` 
+                  : `${selectedTask.reward_xp} XP`}
+                color={O}
+              />
+              <AnalyticsStat 
+                icon={Layers} 
+                label="Codes Remaining" 
+                value={selectedTask.code_type === 'individual'
+                  ? selectedTask.individual_codes_count || 0
+                  : selectedTask.verify_code ? 1 : 0}
+                color="#14B8A6"
+              />
               {selectedTask.type === 'hot' && (
-                <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: '#001F54' }}>🔥 Hot Offer Views</span>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: O }}>{selectedTask.hotCount || 0}</span>
-                </div>
+                <AnalyticsStat 
+                  icon={AlertCircle} 
+                  label="Slots Remaining" 
+                  value={selectedTask.remaining_slots ?? 0}
+                  color="#F59E0B"
+                />
               )}
+              <AnalyticsStat 
+                icon={Clock} 
+                label="Created" 
+                value={selectedTask.created_at 
+                  ? new Date(selectedTask.created_at).toLocaleString() 
+                  : '—'}
+                color="#8899AA"
+              />
             </div>
           </div>
         </div>

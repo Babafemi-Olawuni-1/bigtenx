@@ -56,11 +56,13 @@ function Countdown({ expiresAt }) {
     const tick = () => {
       const diff = new Date(expiresAt) - Date.now()
       if (diff <= 0) { setExpired(true); setDisplay('Expired'); return }
-      const d = Math.floor(diff / 86400000)
-      const h = Math.floor(diff / 3600000) % 24
+      const totalHours = Math.floor(diff / 3600000)
       const m = Math.floor((diff % 3600000) / 60000)
       const s = Math.floor((diff % 60000) / 1000)
-      setDisplay(d > 0 ? `${d}d ${h}h left` : h > 0 ? `${h}h ${m}m left` : `${m}m ${s}s left`)
+      const hStr = String(totalHours).padStart(2, '0')
+      const mStr = String(m).padStart(2, '0')
+      const sStr = String(s).padStart(2, '0')
+      setDisplay(`${hStr}:${mStr}:${sStr}`)
     }
     tick()
     const id = setInterval(tick, 1000)
@@ -81,6 +83,7 @@ function TaskModal({ task, onClose, onSubmit, darkMode, dailyExpiry }) {
   const tk = t(darkMode)
 
   const isHot = task.type === 'hot'
+  const isExpired = isHot && task.expires_at && new Date(task.expires_at) < new Date()
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -210,10 +213,10 @@ function TaskModal({ task, onClose, onSubmit, darkMode, dailyExpiry }) {
             </button>
             <button
               onClick={handleSubmit}
-              disabled={loading || !code.trim()}
-              style={{ flex:2, padding:'13px', borderRadius:12, border:'none', background:(!code.trim() || loading) ? `${C.orange}55` : C.orange, color:'#fff', fontWeight:700, cursor:(!code.trim() || loading) ? 'not-allowed' : 'pointer', fontFamily:'inherit', fontSize:13 }}
+              disabled={loading || !code.trim() || isExpired}
+              style={{ flex:2, padding:'13px', borderRadius:12, border:'none', background:(!code.trim() || loading || isExpired) ? `${C.orange}55` : C.orange, color:'#fff', fontWeight:700, cursor:(!code.trim() || loading || isExpired) ? 'not-allowed' : 'pointer', fontFamily:'inherit', fontSize:13 }}
             >
-              {loading ? 'Checking…' : 'Submit & Verify'}
+              {isExpired ? 'Expired' : loading ? 'Checking…' : 'Submit & Verify'}
             </button>
           </div>
         </div>

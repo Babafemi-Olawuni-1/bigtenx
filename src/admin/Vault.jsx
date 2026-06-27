@@ -1,7 +1,7 @@
-// Vault.jsx - COMPLETE FIXED VERSION (mobile responsive)
-import { useState } from 'react'
+// Vault.jsx - COMPLETE UPDATED VERSION with Transaction History tab
+import { useState, useEffect } from 'react'
 import { API, O } from './adminUtils'
-import { Coins, DollarSign, Calendar, Plus, Minus, Save, History, Calculator, Gavel, TrendingUp, Users, Zap } from 'lucide-react'
+import { Coins, DollarSign, Calendar, Plus, Minus, Save, History, Calculator, Gavel, TrendingUp, Users, Zap, Wallet, Copy, Eye } from 'lucide-react'
 
 export default function Vault({ token }) {
   const [activeTab, setActiveTab] = useState('vault')
@@ -34,23 +34,99 @@ export default function Vault({ token }) {
   const [minDays, setMinDays] = useState(30)
   const [contributionEndDate, setContributionEndDate] = useState('2026-07-30')
   const [distributionDate, setDistributionDate] = useState('2026-08-05')
-  const [historyRecords, setHistoryRecords] = useState([
-    { date: '28 Jan', amount: 106000, participants: 75000 },
-    { date: '28 Feb', amount: 300000, participants: 400000 },
-    { date: '28 Mar', amount: 1000000, participants: 800000 }
-  ])
+  
+  // ─── TRANSACTION HISTORY STATE ────────────────────────────────────
+  const [transactions, setTransactions] = useState([])
+  const [loadingHistory, setLoadingHistory] = useState(false)
+  
+  // ─── WITHDRAWALS STATE ────────────────────────────────────────────
+  const [withdrawals, setWithdrawals] = useState([])
+  const [loadingWithdrawals, setLoadingWithdrawals] = useState(false)
+
+  // ─── DEPOSITS STATE ───────────────────────────────────────────────
+  const [deposits, setDeposits] = useState([])
+  const [loadingDeposits, setLoadingDeposits] = useState(false)
 
   const unitPrice = vaultUnits > 0 ? vaultValue / vaultUnits : 0
   const xpRate = 0.01
   const netProfit = grossRevenue - referralCost - operatingCost
   const totalRevenue = revenueSources.reduce((sum, s) => sum + s.amount, 0)
 
+  // ─── LOAD WITHDRAWALS ─────────────────────────────────────────────
+  const loadWithdrawals = async () => {
+    setLoadingWithdrawals(true)
+    try {
+      const res = await fetch(`${API}/admin/withdrawals/index.php`, {
+        headers: { 'X-Admin-Token': token }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setWithdrawals(data.withdrawals)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingWithdrawals(false)
+    }
+  }
+
+  // ─── LOAD DEPOSITS ─────────────────────────────────────────────────
+  const loadDeposits = async () => {
+    setLoadingDeposits(true)
+    try {
+      const res = await fetch(`${API}/admin/deposits/index.php`, {
+        headers: { 'X-Admin-Token': token }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setDeposits(data.deposits)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingDeposits(false)
+    }
+  }
+
+  // ─── LOAD TRANSACTION HISTORY ─────────────────────────────────────
+  const loadHistory = async () => {
+    setLoadingHistory(true)
+    try {
+      const res = await fetch(`${API}/admin/history/index.php`, {
+        headers: { 'X-Admin-Token': token }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTransactions(data.transactions)
+      }
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoadingHistory(false)
+    }
+  }
+
+  // ─── LOAD DATA WHEN TABS OPEN ─────────────────────────────────────
+  useEffect(() => {
+    if (activeTab === 'withdrawals') {
+      loadWithdrawals()
+    }
+    if (activeTab === 'deposits') {
+      loadDeposits()
+    }
+    if (activeTab === 'history') {
+      loadHistory()
+    }
+  }, [activeTab])
+
   const tabs = [
     { id: 'vault', label: 'Vault', icon: Coins },
     { id: 'revenue', label: 'Revenue', icon: DollarSign },
     { id: 'profit', label: 'Profit', icon: Calculator },
     { id: 'rules', label: 'Rules', icon: Gavel },
-    { id: 'history', label: 'History', icon: History }
+    { id: 'history', label: 'History', icon: History },
+    { id: 'deposits', label: 'Deposits', icon: DollarSign },
+    { id: 'withdrawals', label: 'Withdrawals', icon: Wallet }
   ]
 
   const handleVaultAdjust = () => {
@@ -86,7 +162,6 @@ export default function Vault({ token }) {
   const handleDistribute = () => {
     if (totalXp <= 0) return
     const totalPayout = monthlyRevenue
-    setHistoryRecords([{ date: new Date().toLocaleString('default', { month: 'short', day: 'numeric' }), amount: totalPayout, participants: participants }, ...historyRecords])
     setMonthlyRevenue(0)
     alert(`✅ Distributed $${totalPayout.toLocaleString()} to ${participants.toLocaleString()} participants`)
   }
@@ -256,29 +331,413 @@ export default function Vault({ token }) {
         </div>
       )}
 
-      {/* HISTORY TAB */}
+      {/* ─── HISTORY TAB ───────────────────────────────────────────── */}
       {activeTab === 'history' && (
         <div style={{ background: '#fff', borderRadius: 20, padding: 16, border: '1px solid #E9EDF2' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid #E9EDF2' }}>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Date</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Amount</th>
-                  <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Users</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historyRecords.map((record, idx) => (
-                  <tr key={idx} style={{ borderBottom: '1px solid #E9EDF2' }}>
-                    <td style={{ padding: '10px', fontWeight: 600 }}>{record.date}</td>
-                    <td style={{ padding: '10px', color: O, fontWeight: 700 }}>${record.amount.toLocaleString()}</td>
-                    <td style={{ padding: '10px' }}>{record.participants.toLocaleString()}</td>
+          {loadingHistory ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+              Loading transactions...
+            </div>
+          ) : transactions.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+              No transactions found
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #E9EDF2' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>User</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Type</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Amount</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Reference</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {transactions.map((tx) => (
+                    <tr key={tx.id} style={{ borderBottom: '1px solid #E9EDF2' }}>
+                      <td style={{ padding: '10px', fontWeight: 600, color: '#001F54' }}>
+                        {tx.username || 'N/A'}
+                      </td>
+
+                      <td style={{
+                        padding: '10px',
+                        fontWeight: 700,
+                        textTransform: 'capitalize',
+                        color: tx.type === 'withdrawal' ? '#EF4444' : '#10B981'
+                      }}>
+                        {tx.type}
+                      </td>
+
+                      <td style={{ padding: '10px', fontWeight: 700, color: O }}>
+                        ${parseFloat(tx.amount).toFixed(2)}
+                      </td>
+
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background:
+                            tx.status === 'pending'
+                              ? 'rgba(245,158,11,0.12)'
+                              : tx.status === 'completed'
+                              ? 'rgba(16,185,129,0.12)'
+                              : 'rgba(239,68,68,0.12)',
+                          color:
+                            tx.status === 'pending'
+                              ? '#F59E0B'
+                              : tx.status === 'completed'
+                              ? '#10B981'
+                              : '#EF4444'
+                        }}>
+                          {tx.status}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: '10px', fontSize: 11, color: '#5A6E8A' }}>
+                        {tx.reference || '—'}
+                      </td>
+
+                      <td style={{ padding: '10px', color: '#8899AA' }}>
+                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString() : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DEPOSITS TAB */}
+      {activeTab === 'deposits' && (
+        <div style={{ background: '#fff', borderRadius: 20, padding: 16, border: '1px solid #E9EDF2' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#001F54' }}>Deposit Requests</span>
+            <span style={{ fontSize: 11, color: '#8899AA' }}>
+              {loadingDeposits ? 'Loading...' : `${deposits.length} requests`}
+            </span>
           </div>
+
+          {loadingDeposits ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+              Loading deposits...
+            </div>
+          ) : deposits.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+              <p>No deposit requests found</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #E9EDF2' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>User</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Amount</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Receipt</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {deposits.map((d) => (
+                    <tr key={d.id} style={{ borderBottom: '1px solid #E9EDF2' }}>
+                      <td style={{ padding: '10px', fontWeight: 600, color: '#001F54' }}>
+                        {d.username || 'N/A'}
+                      </td>
+
+                      <td style={{ padding: '10px', color: O, fontWeight: 700 }}>
+                        ${parseFloat(d.amount || 0).toFixed(2)}
+                      </td>
+
+                      <td style={{ padding: '10px' }}>
+                        {d.receipt ? (
+                          <a
+                            href={`${API}/uploads/receipts/${d.receipt}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ color: O, fontWeight: 600, textDecoration: 'none' }}
+                          >
+                            <Eye size={14} style={{ display: 'inline', marginRight: 4 }} /> View
+                          </a>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: d.status === 'pending' ? 'rgba(245,158,11,0.12)' :
+                                      d.status === 'approved' ? 'rgba(16,185,129,0.12)' :
+                                      'rgba(239,68,68,0.12)',
+                          color: d.status === 'pending' ? '#F59E0B' :
+                                 d.status === 'approved' ? '#10B981' :
+                                 '#EF4444'
+                        }}>
+                          {d.status || 'pending'}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: '10px', color: '#8899AA' }}>
+                        {d.created_at ? new Date(d.created_at).toLocaleDateString() : '—'}
+                      </td>
+
+                      <td style={{ padding: '10px' }}>
+                        {d.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API}/admin/deposits/approve.php`, {
+                                    method: 'POST',
+                                    headers: { 
+                                      'Content-Type': 'application/json',
+                                      'X-Admin-Token': token 
+                                    },
+                                    body: JSON.stringify({ transaction_id: d.id })
+                                  })
+                                  const data = await res.json()
+                                  alert(data.message || 'Approved!')
+                                  loadDeposits()
+                                } catch (err) {
+                                  alert('Error approving deposit')
+                                }
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                border: 'none',
+                                borderRadius: 8,
+                                background: '#10B981',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 600
+                              }}
+                            >
+                              Approve
+                            </button>
+
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API}/admin/deposits/reject.php`, {
+                                    method: 'POST',
+                                    headers: { 
+                                      'Content-Type': 'application/json',
+                                      'X-Admin-Token': token 
+                                    },
+                                    body: JSON.stringify({ transaction_id: d.id })
+                                  })
+                                  const data = await res.json()
+                                  alert(data.message || 'Rejected!')
+                                  loadDeposits()
+                                } catch (err) {
+                                  alert('Error rejecting deposit')
+                                }
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                border: 'none',
+                                borderRadius: 8,
+                                background: '#EF4444',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 600
+                              }}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* WITHDRAWALS TAB */}
+      {activeTab === 'withdrawals' && (
+        <div style={{ background: '#fff', borderRadius: 20, padding: 16, border: '1px solid #E9EDF2' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#001F54' }}>Withdrawal Requests</span>
+            <span style={{ fontSize: 11, color: '#8899AA' }}>
+              {loadingWithdrawals ? 'Loading...' : `${withdrawals.length} requests`}
+            </span>
+          </div>
+
+          {loadingWithdrawals ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>Loading withdrawals...</div>
+          ) : withdrawals.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+              <Wallet size={32} color="#8899AA" style={{ marginBottom: 8 }} />
+              <p>No withdrawal requests found</p>
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid #E9EDF2' }}>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>User</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Amount</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Bank</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Account Name</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Account Number</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Status</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Date</th>
+                    <th style={{ textAlign: 'left', padding: '10px', color: '#8899AA' }}>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {withdrawals.map((w) => (
+                    <tr key={w.id} style={{ borderBottom: '1px solid #E9EDF2' }}>
+                      <td style={{ padding: '10px', fontWeight: 600, color: '#001F54' }}>{w.username || 'N/A'}</td>
+                      <td style={{ padding: '10px', color: O, fontWeight: 700 }}>${parseFloat(w.amount || 0).toFixed(2)}</td>
+                      <td style={{ padding: '10px', color: '#5A6E8A' }}>{w.bank_name || '—'}</td>
+                      <td style={{ padding: '10px', color: '#001F54', fontWeight: 600 }}>{w.account_name || '—'}</td>
+                      <td style={{ padding: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontWeight: 700 }}>{w.account_number || '—'}</span>
+                          {w.account_number && (
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(w.account_number)
+                                alert('Account number copied')
+                              }}
+                              style={{
+                                border: 'none',
+                                background: '#F7F8FC',
+                                padding: '4px 8px',
+                                borderRadius: 8,
+                                cursor: 'pointer',
+                                fontSize: 10,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 2
+                              }}
+                            >
+                              <Copy size={12} /> Copy
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          padding: '2px 10px',
+                          borderRadius: 20,
+                          fontSize: 10,
+                          fontWeight: 700,
+                          background: w.status === 'approved' ? 'rgba(16,185,129,0.12)' :
+                                      w.status === 'pending' ? 'rgba(245,158,11,0.12)' :
+                                      w.status === 'rejected' ? 'rgba(239,68,68,0.12)' :
+                                      w.status === 'completed' ? 'rgba(99,102,241,0.12)' :
+                                      'rgba(239,68,68,0.12)',
+                          color: w.status === 'approved' ? '#10B981' :
+                                 w.status === 'pending' ? '#F59E0B' :
+                                 w.status === 'rejected' ? '#EF4444' :
+                                 w.status === 'completed' ? '#6366F1' :
+                                 '#EF4444'
+                        }}>
+                          {w.status || 'pending'}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', color: '#8899AA' }}>
+                        {w.created_at ? new Date(w.created_at).toLocaleDateString() : '—'}
+                      </td>
+                      <td style={{ padding: '10px' }}>
+                        {w.status === 'pending' ? (
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API}/admin/withdrawals/approve.php`, {
+                                    method: 'POST',
+                                    headers: { 
+                                      'Content-Type': 'application/json',
+                                      'X-Admin-Token': token 
+                                    },
+                                    body: JSON.stringify({ transaction_id: w.id })
+                                  })
+                                  const data = await res.json()
+                                  alert(data.message || 'Approved!')
+                                  loadWithdrawals()
+                                } catch (err) {
+                                  alert('Error approving withdrawal')
+                                }
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                border: 'none',
+                                borderRadius: 8,
+                                background: '#10B981',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 600
+                              }}
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={async () => {
+                                try {
+                                  const res = await fetch(`${API}/admin/withdrawals/reject.php`, {
+                                    method: 'POST',
+                                    headers: { 
+                                      'Content-Type': 'application/json',
+                                      'X-Admin-Token': token 
+                                    },
+                                    body: JSON.stringify({ transaction_id: w.id })
+                                  })
+                                  const data = await res.json()
+                                  alert(data.message || 'Rejected!')
+                                  loadWithdrawals()
+                                } catch (err) {
+                                  alert('Error rejecting withdrawal')
+                                }
+                              }}
+                              style={{
+                                padding: '6px 10px',
+                                border: 'none',
+                                borderRadius: 8,
+                                background: '#EF4444',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                fontSize: 11,
+                                fontWeight: 600
+                              }}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

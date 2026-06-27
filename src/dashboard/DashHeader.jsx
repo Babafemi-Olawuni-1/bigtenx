@@ -1,8 +1,133 @@
 import { Sun, Moon, Bell } from 'lucide-react'
 import { C, t } from './tokens'
 
+// Country name → ISO 3166-1 alpha-2 code mapping (for flag emoji generation)
+const COUNTRY_CODE_MAP = {
+  'nigeria': 'NG',
+  'ghana': 'GH',
+  'kenya': 'KE',
+  'south africa': 'ZA',
+  'united states': 'US',
+  'usa': 'US',
+  'united kingdom': 'GB',
+  'uk': 'GB',
+  'canada': 'CA',
+  'australia': 'AU',
+  'india': 'IN',
+  'germany': 'DE',
+  'france': 'FR',
+  'italy': 'IT',
+  'spain': 'ES',
+  'brazil': 'BR',
+  'mexico': 'MX',
+  'indonesia': 'ID',
+  'pakistan': 'PK',
+  'bangladesh': 'BD',
+  'ethiopia': 'ET',
+  'tanzania': 'TZ',
+  'uganda': 'UG',
+  'rwanda': 'RW',
+  'cameroon': 'CM',
+  'senegal': 'SN',
+  'ivory coast': 'CI',
+  "cote d'ivoire": 'CI',
+  'zambia': 'ZM',
+  'zimbabwe': 'ZW',
+  'egypt': 'EG',
+  'morocco': 'MA',
+  'algeria': 'DZ',
+  'tunisia': 'TN',
+  'sudan': 'SD',
+  'angola': 'AO',
+  'mozambique': 'MZ',
+  'madagascar': 'MG',
+  'malawi': 'MW',
+  'niger': 'NE',
+  'mali': 'ML',
+  'burkina faso': 'BF',
+  'guinea': 'GN',
+  'benin': 'BJ',
+  'togo': 'TG',
+  'liberia': 'LR',
+  'sierra leone': 'SL',
+  'gambia': 'GM',
+  'gabon': 'GA',
+  'congo': 'CG',
+  'dr congo': 'CD',
+  'somalia': 'SO',
+  'south sudan': 'SS',
+  'botswana': 'BW',
+  'namibia': 'NA',
+  'lesotho': 'LS',
+  'eswatini': 'SZ',
+  'swaziland': 'SZ',
+  'china': 'CN',
+  'japan': 'JP',
+  'south korea': 'KR',
+  'philippines': 'PH',
+  'vietnam': 'VN',
+  'thailand': 'TH',
+  'malaysia': 'MY',
+  'singapore': 'SG',
+  'myanmar': 'MM',
+  'sri lanka': 'LK',
+  'nepal': 'NP',
+  'ukraine': 'UA',
+  'russia': 'RU',
+  'poland': 'PL',
+  'netherlands': 'NL',
+  'belgium': 'BE',
+  'sweden': 'SE',
+  'norway': 'NO',
+  'denmark': 'DK',
+  'finland': 'FI',
+  'portugal': 'PT',
+  'greece': 'GR',
+  'turkey': 'TR',
+  'saudi arabia': 'SA',
+  'uae': 'AE',
+  'united arab emirates': 'AE',
+  'qatar': 'QA',
+  'kuwait': 'KW',
+  'bahrain': 'BH',
+  'oman': 'OM',
+  'jordan': 'JO',
+  'lebanon': 'LB',
+  'israel': 'IL',
+  'iran': 'IR',
+  'iraq': 'IQ',
+  'new zealand': 'NZ',
+  'argentina': 'AR',
+  'colombia': 'CO',
+  'chile': 'CL',
+  'peru': 'PE',
+  'venezuela': 'VE',
+}
+
+// Convert ISO alpha-2 code to flag emoji using regional indicator symbols
+function countryCodeToFlag(code) {
+  if (!code || code.length !== 2) return '🌍'
+  const upper = code.toUpperCase()
+  const flagEmoji = [...upper].map(char =>
+    String.fromCodePoint(char.charCodeAt(0) - 65 + 0x1F1E6)
+  ).join('')
+  return flagEmoji
+}
+
+function getFlagForCountry(country) {
+  if (!country) return '🌍'
+  const key = country.toLowerCase().trim()
+  const code = COUNTRY_CODE_MAP[key]
+  if (code) return countryCodeToFlag(code)
+  // Fallback: show world globe
+  return '🌍'
+}
+
 export default function DashHeader({ user, darkMode, setDarkMode }) {
   const tk = t(darkMode)
+
+  const country = user?.country ?? 'Nigeria'
+  const flagEmoji = getFlagForCountry(country)
 
   return (
     <div style={{
@@ -40,16 +165,16 @@ export default function DashHeader({ user, darkMode, setDarkMode }) {
         >
           {darkMode ? <Sun size={15} color={C.orange} /> : <Moon size={15} color={C.navy} />}
         </button>
-        <div style={{
-          width: 34, height: 34, borderRadius: '50%',
-          background: tk.card, boxShadow: tk.iconShadow,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          <svg width="22" height="14" viewBox="0 0 30 20">
-            <rect width="10" height="20" fill="#008751"/>
-            <rect x="10" width="10" height="20" fill="#fff"/>
-            <rect x="20" width="10" height="20" fill="#008751"/>
-          </svg>
+        <div
+          title={country}
+          style={{
+            width: 34, height: 34, borderRadius: '50%',
+            background: tk.card, boxShadow: tk.iconShadow,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, lineHeight: 1,
+          }}
+        >
+          {flagEmoji}
         </div>
         <button
           onClick={() => alert('Notifications coming soon')}

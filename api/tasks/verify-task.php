@@ -124,7 +124,9 @@ if ($task['type'] === 'hot') {
 |--------------------------------------------------------------------------
 */
 $stmt = $db->prepare("
-    SELECT coins, usd_balance, today_earnings, today_earnings_date, notifications
+    SELECT coins, usd_balance, today_earnings,
+           today_earnings_date, notifications,
+           streak, last_task_date
     FROM users
     WHERE id = ?
 ");
@@ -134,6 +136,20 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$user) {
     echo json_encode(['success' => false, 'message' => 'User not found']);
     exit;
+}
+
+// Safely add optional columns that may not exist yet
+foreach (['today_earnings_cash', 'last_task_date', 'streak'] as $col) {
+    if (!array_key_exists($col, $user)) {
+        try {
+            $oc = $db->prepare("SELECT `$col` FROM users WHERE id = ?");
+            $oc->execute([$userId]);
+            $ocRow = $oc->fetch(PDO::FETCH_ASSOC);
+            $user[$col] = $ocRow[$col] ?? null;
+        } catch (Exception $e) {
+            $user[$col] = null;
+        }
+    }
 }
 
 /*
@@ -205,7 +221,12 @@ $currentToday = ($user['today_earnings_date'] === $today)
     ? (float)$user['today_earnings']
     : 0;
 
-$newTodayEarnings = $currentToday + $finalReward;
+$currentTodayCash = ($user['today_earnings_date'] === $today)
+    ? (float)($user['today_earnings_cash'] ?? 0)
+    : 0;
+
+$newTodayEarnings = $currentToday + ($rewardType === 'xp' ? $finalReward : 0);
+$newTodayCash     = $currentTodayCash + ($rewardType === 'cash' ? $finalReward : 0);
 
 /*
 |--------------------------------------------------------------------------
@@ -220,6 +241,28 @@ if ($rewardType === 'xp' && $newTodayEarnings > $dailyCap) {
         'message' => "Daily XP limit reached. Maximum is {$dailyCap} XP per day."
     ]);
     exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Streak logic — increment on first daily task completed today
+|--------------------------------------------------------------------------
+*/
+$yesterday        = date('Y-m-d', strtotime('-1 day'));
+$lastTaskDate     = $user['last_task_date'] ?? null;
+$currentStreak    = (int)($user['streak'] ?? 0);
+$isFirstTaskToday = ($lastTaskDate !== $today) && ($task['type'] === 'daily');
+
+$newStreak     = $currentStreak;
+$newLastTask   = $lastTaskDate;
+
+if ($isFirstTaskToday) {
+    if ($lastTaskDate === $yesterday) {
+        $newStreak = $currentStreak + 1; // consecutive day
+    } else {
+        $newStreak = 1; // reset
+    }
+    $newLastTask = $today;
 }
 
 /*
@@ -244,27 +287,43 @@ try {
     }
 
     if ($rewardType === 'cash') {
-        $db->prepare("
-            UPDATE users
-            SET usd_balance = usd_balance + ?,
-                today_earnings = ?,
-                today_earnings_date = ?
-            WHERE id = ?
-        ")->execute([$finalReward, $newTodayEarnings, $today, $userId]);
-
-        $newCash = round((float)$user['usd_balance'] + $finalReward, 2);
-        $newCoins = (float)$user['coins'];
+        try {
+            $db->prepare("
+                UPDATE users
+                SET usd_balance = usd_balance + ?,
+                    today_earnings = ?,
+                    today_earnings_cash = ?,
+                    today_earnings_date = ?,
+                    streak = ?,
+                    last_task_date = ?
+                WHERE id = ?
+            ")->execute([$finalReward, $newTodayEarnings, $newTodayCash, $today, $newStreak, $newLastTask, $userId]);
+        } catch (Exception $e) {
+            $db->prepare("
+                UPDATE users SET usd_balance = usd_balance + ?, today_earnings = ?, today_earnings_date = ? WHERE id = ?
+            ")->execute([$finalReward, $newTodayEarnings, $today, $userId]);
+        }
+        $newCash  = round((float)$user['usd_balance'] + $finalReward, 2);
+        $newCoins = (int)$user['coins'];
     } else {
-        $db->prepare("
-            UPDATE users
-            SET coins = coins + ?,
-                today_earnings = ?,
-                today_earnings_date = ?
-            WHERE id = ?
-        ")->execute([$finalReward, $newTodayEarnings, $today, $userId]);
-
+        try {
+            $db->prepare("
+                UPDATE users
+                SET coins = coins + ?,
+                    today_earnings = ?,
+                    today_earnings_cash = ?,
+                    today_earnings_date = ?,
+                    streak = ?,
+                    last_task_date = ?
+                WHERE id = ?
+            ")->execute([$finalReward, $newTodayEarnings, $newTodayCash, $today, $newStreak, $newLastTask, $userId]);
+        } catch (Exception $e) {
+            $db->prepare("
+                UPDATE users SET coins = coins + ?, today_earnings = ?, today_earnings_date = ? WHERE id = ?
+            ")->execute([$finalReward, $newTodayEarnings, $today, $userId]);
+        }
         $newCoins = round((float)$user['coins'] + $finalReward, 2);
-        $newCash = round((float)$user['usd_balance'], 2);
+        $newCash  = round((float)$user['usd_balance'], 2);
     }
 
     $notifs = json_decode($user['notifications'] ?? '[]', true) ?: [];
@@ -286,15 +345,18 @@ try {
     $db->commit();
 
     echo json_encode([
-        'success' => true,
-        'message' => 'Task completed successfully',
-        'reward_type' => $rewardType,
-        'amount_earned' => $finalReward,
-        'new_coins' => $newCoins,
-        'new_usd_balance' => $newCash,
-        'today_earnings' => $newTodayEarnings,
-        'multiplier' => $multiplier,
-        'vip_bonus' => $isVip
+        'success'          => true,
+        'message'          => 'Task completed successfully',
+        'reward_type'      => $rewardType,
+        'amount_earned'    => $finalReward,
+        'new_coins'        => $newCoins,
+        'new_usd_balance'  => $newCash,
+        'today_earnings'   => $newTodayEarnings,
+        'today_earnings_cash' => $newTodayCash,
+        'multiplier'       => $multiplier,
+        'vip_bonus'        => $isVip,
+        'streak'           => $newStreak,
+        'last_task_date'   => $newLastTask,
     ]);
 
 } catch (Exception $e) {

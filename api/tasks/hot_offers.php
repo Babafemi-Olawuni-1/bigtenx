@@ -27,6 +27,7 @@ try {
         ? "AND (t.max_users IS NULL OR {$completionsExpr} < t.max_users)"
         : "";
 
+    // ─── FIX: Include expires_at in SELECT ────────────────────────────────
     $sql = "
         SELECT
             t.id,
@@ -54,11 +55,12 @@ try {
     $tasks = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($tasks as &$t) {
-        $t['reward_xp']        = (int)$t['reward_xp'];
+        $t['reward_xp']        = (float)$t['reward_xp'];  // Changed to float for decimal support
         $t['apply_multiplier'] = (int)$t['apply_multiplier'];
         $t['completions']      = (int)$t['completions'];
         $t['max_users']        = $t['max_users'] !== null ? (int)$t['max_users'] : null;
 
+        // ─── FIX: Decode steps properly ──────────────────────────────────
         $t['steps'] = (!empty($t['steps']))
             ? (is_array($decoded = json_decode($t['steps'], true)) ? $decoded : [])
             : [];

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun } from 'lucide-react'
 import { useDashboard } from '../dashboard/useDashboard'
 import { t, C } from '../dashboard/tokens'
 import DashHeader from '../dashboard/DashHeader'
@@ -23,110 +22,142 @@ import AcademyPage from './AcademyPage'
 import SquadPage from './SquadPage'
 import ProfilePage from './ProfilePage'
 import UpgradePage from './UpgradePage'
-import { getFlagEmoji } from '../dashboard/countryFlags'
-import { isLevelActive, LEVEL_MAP } from '../dashboard/levels'
 import { API } from '../auth/api'
-
-function cleanConfetti() {
-  document.querySelectorAll('.confetti-piece').forEach(el => el.remove())
-}
 
 function ComingSoonModal({ service, onClose, darkMode }) {
   const tk = t(darkMode)
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 }} onClick={onClose}>
-      <div style={{ background: tk.card, border: `1px solid ${tk.cardBorder}`, borderRadius: 24, padding: '36px 28px', textAlign: 'center', maxWidth: 300, width: '100%' }} onClick={e => e.stopPropagation()}>
-        <div style={{ fontSize: 40, marginBottom: 12 }}>🚀</div>
-        <h3 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 800, color: tk.text, fontSize: 18, marginBottom: 8 }}>{service}</h3>
-        <p style={{ color: tk.textMuted, fontSize: 13, lineHeight: 1.6, marginBottom: 24 }}>This feature is coming soon. Stay tuned!</p>
-        <button onClick={onClose} style={{ width: '100%', background: C.orange, color: '#fff', border: 'none', borderRadius: 12, padding: '12px', fontWeight: 700, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit' }}>Got it!</button>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: 24
+      }}
+      onClick={onClose}
+    >
+      <div
+        style={{
+          background: tk.card,
+          border: `1px solid ${tk.cardBorder}`,
+          borderRadius: 24,
+          padding: '36px 28px',
+          textAlign: 'center',
+          maxWidth: 300,
+          width: '100%'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 style={{ color: tk.text }}>{service}</h3>
+        <p style={{ color: tk.textMuted }}>Coming soon</p>
       </div>
     </div>
   )
 }
 
-function HomeScreen({ user, updateUser, darkMode, setDarkMode, setActiveTab, onUpgrade }) {
+function HomeScreen({
+  user,
+  updateUser,
+  darkMode,
+  setDarkMode,
+  setActiveTab,
+  onUpgrade
+}) {
   const [modal, setModal] = useState(null)
   const tk = t(darkMode)
 
-  const handleServiceClick = (serviceLabel, screenName) => {
-    if (serviceLabel === 'Tasks') { 
-      setActiveTab('tasks')
-      return 
+  const handleServiceClick = (serviceLabel) => {
+    const routes = {
+      Tasks: 'tasks',
+      Levels: 'upgrade',
+      Vault: 'vault',
+      Referral: 'refer',
+      Contest: 'contest',
+      Exchange: 'exchange',
+      Academy: 'academy',
+      Marketplace: 'marketplace'
     }
-    if (serviceLabel === 'Levels') { 
-      setActiveTab('upgrade')
-      return 
-    }
-    if (serviceLabel === 'Vault') {
-      setActiveTab('vault')
+
+    if (routes[serviceLabel]) {
+      setActiveTab(routes[serviceLabel])
       return
     }
-    if (serviceLabel === 'Referral') {
-      setActiveTab('refer')
-      return
-    }
-    if (serviceLabel === 'Contest') {
-      setActiveTab('contest')
-      return
-    }
-    if (serviceLabel === 'Exchange') {
-      setActiveTab('exchange')
-      return
-    }
-    if (serviceLabel === 'Academy') {
-      setActiveTab('academy')
-      return
-    }
-    if (serviceLabel === 'Marketplace') {
-      setActiveTab('marketplace')
-      return
-    }
+
     setModal(serviceLabel)
   }
 
-  const handlePromoAction = (action) => {
-    if (action === 'tasks') {
-      setActiveTab('tasks')
-    } else if (action === 'referral') {
-      setActiveTab('refer')
-    } else if (action === 'vault') {
-      setActiveTab('vault')
-    }
-  }
-
   return (
-    <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
+    <div style={{ background: tk.bg, minHeight: '100%' }}>
       <DashHeader user={user} darkMode={darkMode} setDarkMode={setDarkMode} />
 
-      <BalanceCard 
-        user={user} 
-        darkMode={darkMode} 
-        onUpgrade={onUpgrade} 
-        onFund={() => setActiveTab('wallet')} 
+      <BalanceCard
+        user={user}
+        darkMode={darkMode}
+        onUpgrade={onUpgrade}
+        onFund={() => setActiveTab('wallet-deposit')}
+        onWithdraw={() => setActiveTab('wallet-withdraw')}
       />
-      
+
+      {/* Badge Display */}
+      {user?.current_badge && (
+        <div
+          style={{
+            margin: '12px 16px',
+            padding: 14,
+            borderRadius: 16,
+            background: tk.card,
+            border: `1px solid ${tk.cardBorder}`
+          }}
+        >
+          <div style={{ fontSize: 12, color: tk.textMuted }}>
+            Current Badge
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: C.orange }}>
+            {user.current_badge}
+          </div>
+          <div style={{ fontSize: 12, color: tk.textMuted }}>
+            Multiplier: {user.current_multiplier || '1.0'}x
+          </div>
+        </div>
+      )}
+
       <StreakBar user={user} updateUser={updateUser} onUpgrade={onUpgrade} />
-      
       <ServicesGrid darkMode={darkMode} onServiceClick={handleServiceClick} />
-      
-      <PromoCarousel darkMode={darkMode} onAction={handlePromoAction} />
-      
+      <PromoCarousel darkMode={darkMode} />
       <DashFooter darkMode={darkMode} />
-      
-      {modal && <ComingSoonModal service={modal} onClose={() => setModal(null)} darkMode={darkMode} />}
+
+      {modal && (
+        <ComingSoonModal
+          service={modal}
+          onClose={() => setModal(null)}
+          darkMode={darkMode}
+        />
+      )}
     </div>
   )
 }
 
 export default function Dashboard({ user: initialUser, onLogout }) {
-  const { user, updateUser, darkMode, setDarkMode, activeTab, setActiveTab } = useDashboard()
-  const [showUpgrade, setShowUpgrade] = useState(false)
+  const {
+    user,
+    updateUser,
+    darkMode,
+    setDarkMode,
+    activeTab,
+    setActiveTab
+  } = useDashboard()
+
   const [loading, setLoading] = useState(true)
   const [showDeposit, setShowDeposit] = useState(false)
   const [showVirtualAccount, setShowVirtualAccount] = useState(false)
 
   const initialUserMerged = useRef(false)
+
   useEffect(() => {
     if (initialUser && !initialUserMerged.current) {
       initialUserMerged.current = true
@@ -135,141 +166,212 @@ export default function Dashboard({ user: initialUser, onLogout }) {
     setLoading(false)
   }, [])
 
-  const notifFetched = useRef(null)
-  useEffect(() => {
-    const uid = user?.id
-    if (!uid || notifFetched.current === uid) return
-    notifFetched.current = uid
-    fetch(`${API}/notifications/index.php?user_id=${uid}`)
-      .then(r => r.json())
-      .then(data => { if (data.success) updateUser({ notifications: data.notifications }) })
-      .catch(() => {})
-  }, [user?.id])
+  const refreshUser = async () => {
+    try {
+      if (!user?.id) return
+      const res = await fetch(`${API}/wallet/index.php?user_id=${user.id}`)
+      const data = await res.json()
+
+      if (data?.success && data?.wallet) {
+        updateUser({
+          usd_balance: parseFloat(data.wallet.usd_balance),
+          usdBalance: parseFloat(data.wallet.usd_balance),
+          coins: parseInt(data.wallet.coins),
+          history: data.history || [],
+          notifications: data.notifications || [],
+          current_badge: data.current_badge || null,
+          current_multiplier: data.current_multiplier || 1.0
+        })
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
 
   const tk = t(darkMode)
-  const openUpgrade = () => setShowUpgrade(true)
-
-  const handleDeposit = () => {
-    setShowDeposit(true)
-  }
-
-  const handleVirtualAccount = () => {
-    setShowVirtualAccount(true)
-  }
-
-  const handleBackFromDeposit = () => {
-    setShowDeposit(false)
-  }
-
-  const handleBackFromVirtual = () => {
-    setShowVirtualAccount(false)
-  }
-
-  const handleBackFromScreen = () => {
-    setActiveTab('home')
-  }
-
-  if (loading) {
-    return <div style={{ background: tk.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tk.text }}>Loading...</div>
-  }
-
-  if (!user) {
-    return <div style={{ background: tk.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: tk.text }}>Please login again</div>
-  }
-
-  if (showDeposit) {
-    return (
-      <div style={{ background: tk.bg, fontFamily: "'Sora',sans-serif", minHeight: '100vh' }}>
-        <div style={{ maxWidth: 500, margin: '0 auto', position: 'relative', minHeight: '100vh' }}>
-          <DepositScreen 
-            user={user} 
-            darkMode={darkMode} 
-            setDarkMode={setDarkMode} 
-            onBack={handleBackFromDeposit} 
-          />
-        </div>
-      </div>
-    )
-  }
-
-  if (showVirtualAccount) {
-    return (
-      <div style={{ background: tk.bg, fontFamily: "'Sora',sans-serif", minHeight: '100vh' }}>
-        <div style={{ maxWidth: 500, margin: '0 auto', position: 'relative', minHeight: '100vh' }}>
-          <VirtualAccountScreen 
-            user={user} 
-            darkMode={darkMode} 
-            setDarkMode={setDarkMode} 
-            onBack={handleBackFromVirtual} 
-          />
-        </div>
-      </div>
-    )
-  }
 
   const renderScreen = () => {
     switch (activeTab) {
       case 'wallet':
-        return <Wallet 
-          user={user} 
-          updateUser={updateUser} 
-          darkMode={darkMode} 
-          setDarkMode={setDarkMode} 
-          onUpgrade={openUpgrade}
-          onDeposit={handleDeposit}
-          onVirtualAccount={handleVirtualAccount}
-          onBack={handleBackFromScreen}
-        />
+        return (
+          <Wallet
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+            initialTab="deposit"
+          />
+        )
+
+      case 'wallet-deposit':
+        return (
+          <Wallet
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+            initialTab="deposit"
+          />
+        )
+
+      case 'wallet-withdraw':
+        return (
+          <Wallet
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+            initialTab="withdraw"
+          />
+        )
+
       case 'tasks':
-        return <TasksScreen user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} />
+        return (
+          <TasksScreen
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+          />
+        )
+
       case 'profile':
-        return <ProfilePage 
-          user={user} 
-          darkMode={darkMode} 
-          setDarkMode={setDarkMode} 
-          onLogout={onLogout} 
-          onUpgrade={openUpgrade}
-          onBack={handleBackFromScreen}
-        />
+        return (
+          <ProfilePage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onLogout={onLogout}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'vault':
-        return <Vault user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <Vault
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'refer':
-        return <ReferScreen user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <ReferScreen
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'contest':
-        return <ContestPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <ContestPage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'marketplace':
-        return <MarketplacePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <MarketplacePage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'exchange':
-        return <ExchangePage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <ExchangePage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'academy':
-        return <AcademyPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <AcademyPage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'squad':
-        return <SquadPage user={user} darkMode={darkMode} setDarkMode={setDarkMode} onBack={handleBackFromScreen} />
+        return (
+          <SquadPage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onBack={() => setActiveTab('home')}
+          />
+        )
+
       case 'upgrade':
-        return <UpgradePage 
-          user={user} 
-          darkMode={darkMode} 
-          setDarkMode={setDarkMode} 
-          onClose={handleBackFromScreen}
-          onUpgrade={(plan) => {
-            updateUser({ level: plan === 'bronze' ? 1 : plan === 'silver' ? 2 : plan === 'gold' ? 3 : 4 })
-            openUpgrade()
-          }}
-        />
+        return (
+          <UpgradePage
+            user={user}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            onClose={() => setActiveTab('home')}
+            onUpgrade={refreshUser}
+          />
+        )
+
       default:
-        return <HomeScreen user={user} updateUser={updateUser} darkMode={darkMode} setDarkMode={setDarkMode} setActiveTab={setActiveTab} onUpgrade={openUpgrade} />
+        return (
+          <HomeScreen
+            user={user}
+            updateUser={updateUser}
+            darkMode={darkMode}
+            setDarkMode={setDarkMode}
+            setActiveTab={setActiveTab}
+            onUpgrade={() => setActiveTab('upgrade')}
+          />
+        )
     }
   }
 
+  if (loading) {
+    return (
+      <div style={{
+        background: tk.bg,
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}>
+        Loading...
+      </div>
+    )
+  }
+
   return (
-    <div style={{ background: tk.bg, fontFamily: "'Sora',sans-serif", minHeight: '100vh' }}>
-      <div style={{ maxWidth: 500, margin: '0 auto', position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ flex: 1, paddingBottom: 70 }}>
+    <div style={{ background: tk.bg, minHeight: '100vh' }}>
+      <div style={{ maxWidth: 500, margin: '0 auto', minHeight: '100vh' }}>
+        <div style={{ paddingBottom: 70 }}>
           {renderScreen()}
         </div>
-        <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} darkMode={darkMode} />
+
+        <BottomNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          darkMode={darkMode}
+        />
       </div>
-      {showUpgrade && <UpgradeModal user={user} updateUser={updateUser} darkMode={darkMode} onClose={() => setShowUpgrade(false)} />}
     </div>
   )
 }

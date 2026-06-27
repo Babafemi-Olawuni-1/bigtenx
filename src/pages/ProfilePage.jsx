@@ -1,3 +1,4 @@
+// ProfilePage.jsx - COMPLETE DATABASE-SYNCED PROFILE (EMOJI-FREE)
 import { useState } from 'react'
 import { Sun, Moon, User, Lock, Bell, Gift, Users, Award, TrendingUp, LogOut, ChevronRight, ArrowLeft } from 'lucide-react'
 import { t, C } from '../dashboard/tokens'
@@ -11,18 +12,32 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
     setTimeout(() => setToast(null), 3000)
   }
 
-  const getUserLevel = () => {
-    const level = user?.level || 1
-    const levels = { 1: 'Bronze', 2: 'Silver', 3: 'Gold', 4: 'Diamond' }
-    return levels[level] || 'Bronze'
-  }
+  // ─── LEVEL & BADGE FROM DATABASE ────────────────────────────────
+  const usdBalance = parseFloat(user?.usd_balance ?? user?.usdBalance ?? 0);
+  const coins = parseInt(user?.coins ?? 0);
 
-  const getStreak = () => user?.streakMonth || 12
-  const getDayOfMonth = () => user?.streakDay || 8
-  const getRanking = () => user?.ranking || 407
+  // Map level integer → plan name
+  const LEVEL_NAMES = { 1: 'Bronze', 2: 'Silver', 3: 'Gold', 4: 'Diamond' }
+  const levelInt    = parseInt(user?.level ?? 1)
+  const planName    = LEVEL_NAMES[levelInt] || 'Bronze'
+
+  // Badge color per level/badge name
+  const BADGE_COLORS = {
+    bronze:  '#CD7F32',
+    silver:  '#94A3B8',
+    gold:    '#EAB308',
+    diamond: '#2563EB',
+    vip:     '#7C3AED',
+  }
+  const badgeName  = user?.current_badge || null
+  const badgeColor = BADGE_COLORS[(badgeName || '').toLowerCase()] || C.orange
+  const isVip      = Boolean(user?.is_vip) || Boolean(user?.vip_active)
+  const multiplier = user?.current_multiplier
+    ? `${parseFloat(user.current_multiplier).toFixed(1)}x`
+    : '1.0x'
 
   return (
-    <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
+    <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 40 }}>
 
       {/* Top Bar with Back Button */}
       <div style={{
@@ -37,7 +52,7 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         }}>
           <ArrowLeft size={18} color={tk.text} />
         </button>
-        <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Profile</span>
+        <span style={{ fontSize: 18, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Profile</span>
         <button onClick={() => setDarkMode(!darkMode)} style={{
           width: 38, height: 38, borderRadius: '50%',
           background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
@@ -48,14 +63,13 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
         </button>
       </div>
 
-      {/* Profile Hero Section - FIXED: Always navy blue gradient */}
+      {/* Profile Hero Section */}
       <div style={{
         background: `linear-gradient(160deg, #001F54 0%, #002266 100%)`,
-        padding: '40px 20px 28px',
+        padding: '36px 20px 28px',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         position: 'relative', overflow: 'hidden',
       }}>
-        {/* Decorative circles */}
         <div style={{ position: 'absolute', top: -40, right: -40, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,.04)' }} />
         <div style={{ position: 'absolute', bottom: -30, left: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,107,0,.08)' }} />
 
@@ -73,136 +87,165 @@ export default function ProfilePage({ user, darkMode, setDarkMode, onLogout, onU
           <div style={{
             position: 'absolute', bottom: -2, right: -2,
             width: 28, height: 28, borderRadius: '50%',
-            background: C.orange, border: `2.5px solid #001F54`,
+            background: badgeColor, border: `2.5px solid #001F54`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 900, color: '#fff',
+            fontSize: 10, fontWeight: 900, color: '#fff',
           }}>
-            {user?.level || 1}
+            {levelInt}
           </div>
         </div>
 
         {/* Username */}
         <span style={{ fontSize: 20, fontWeight: 900, color: '#fff', letterSpacing: '-.02em', marginBottom: 6 }}>
-          {user?.username || 'mrmillionx'}
+          {user?.username || 'user'}
         </span>
+
+        {/* Plan badge */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', gap: 4,
+            background: badgeColor + '33', borderRadius: 50, padding: '3px 12px',
+            fontSize: 11, fontWeight: 800, color: '#fff',
+            border: `1px solid ${badgeColor}55`,
+          }}>
+            {badgeName ? `${badgeName} Badge` : planName}
+          </span>
+          {isVip && (
+            <span style={{
+              display: 'inline-flex', alignItems: 'center',
+              background: 'rgba(124,58,237,0.35)', borderRadius: 50, padding: '3px 12px',
+              fontSize: 11, fontWeight: 800, color: '#fff',
+              border: '1px solid rgba(124,58,237,0.5)',
+            }}>
+              VIP
+            </span>
+          )}
+        </div>
 
         {/* Country Tag */}
         <span style={{
-          display: 'inline-flex', alignItems: 'center', gap: 5,
+          display: 'inline-flex', alignItems: 'center',
           background: 'rgba(255,255,255,.12)', borderRadius: 50, padding: '4px 12px',
-          fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,.8)',
-          marginBottom: 16,
+          fontSize: 12, fontWeight: 650, color: 'rgba(255,255,255,.8)',
+          marginBottom: 20,
         }}>
-          🇳🇬 {user?.country || 'Nigeria'}
+          {user?.country || 'Nigeria'}
         </span>
 
         {/* Stats Row */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 24 }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>🔥 {getStreak()}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>STREAK</div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, width: '100%', maxWidth: 360 }}>
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{user?.streak ?? 0} Days</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>STREAK</div>
           </div>
-          <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,.15)' }} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>Day {getDayOfMonth()}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>OF MONTH</div>
+          <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,.15)', alignSelf: 'center' }} />
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>{coins.toLocaleString()}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>XP COINS</div>
           </div>
-          <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,.15)' }} />
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>#{getRanking()}</div>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,.55)', fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase' }}>RANKING</div>
+          <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,.15)', alignSelf: 'center' }} />
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 4 }}>${usdBalance.toFixed(2)}</div>
+            <div style={{ fontSize: 9, color: 'rgba(255,255,255,.55)', fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase' }}>BALANCE</div>
           </div>
         </div>
       </div>
 
       {/* Scrollable Content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px 32px' }}>
+      <div style={{ padding: '20px 16px 32px' }}>
 
-        {/* ACCOUNT Section */}
+        {/* ACCOUNT INFO Section */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Account</p>
-          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', boxShadow: tk.iconShadow }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}`, cursor: 'pointer' }} onClick={() => showToast('Account settings coming soon')}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><User size={18} stroke="#4F46E5" /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Account</span>
-              <ChevronRight size={14} color={tk.textMuted} />
+          <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Account Information</p>
+          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', border: `1.5px solid ${tk.cardBorder}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyHook: 'space-between', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Username</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: tk.textMuted }}>{user?.username || 'N/A'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}`, cursor: 'pointer' }} onClick={() => showToast('Change password coming soon')}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#FFF5EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Lock size={18} stroke={C.orange} /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Change Password</span>
-              <ChevronRight size={14} color={tk.textMuted} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Email Address</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: tk.textMuted }}>{user?.email || 'N/A'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }} onClick={() => showToast('Notifications coming soon')}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Bell size={18} stroke="#16A34A" /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Notifications</span>
-              <ChevronRight size={14} color={tk.textMuted} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Country</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: tk.textMuted }}>{user?.country || 'N/A'}</span>
             </div>
           </div>
         </div>
 
-        {/* REFERRAL INFO Section */}
+        {/* REFERRALS Section */}
         <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Referral Info</p>
-          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', boxShadow: tk.iconShadow }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#FFF5EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Gift size={18} stroke={C.orange} /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Referral Code</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{user?.referralCode || user?.username || 'N/A'}</span>
+          <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Referral Stats</p>
+          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', border: `1.5px solid ${tk.cardBorder}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Referral Code</span>
+              <span style={{ fontSize: 13, fontWeight: 800, color: C.orange }}>{user?.referral_code ?? user?.referralCode ?? 'N/A'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Users size={18} stroke="#4F46E5" /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Referred by</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: tk.textMuted }}>{user?.referredBy || 'Femi'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Total Referrals</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: tk.text }}>{parseInt(user?.total_referrals ?? 0)}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Award size={18} stroke="#16A34A" /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Levels</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{getUserLevel()}</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Referral Earnings</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#10B981' }}>${parseFloat(user?.referral_earnings ?? 0).toFixed(2)}</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Membership Level</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>{planName}</span>
             </div>
           </div>
         </div>
 
-        {/* BADGES & VIP Section */}
+        {/* BADGES & VIP STATUS Section */}
         <div style={{ marginBottom: 20 }}>
           <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Badges & VIP</p>
-          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', boxShadow: tk.iconShadow }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#FFF5EC', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Award size={18} stroke={C.orange} /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>VIP Status</span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 14px', borderRadius: 20, background: user?.is_vip ? '#E8F5E9' : '#F5F5F5', color: user?.is_vip ? '#2E7D32' : '#9E9E9E' }}>{user?.is_vip ? 'active' : 'inactive'}</span>
+          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', border: `1.5px solid ${tk.cardBorder}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Current Badge</span>
+              <span style={{ fontSize: 13, fontWeight: 750, color: badgeColor }}>{badgeName || 'None'}</span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><TrendingUp size={18} stroke="#16A34A" /></div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Vault Max Units</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.orange }}>× 4</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: `1px solid ${tk.cardBorder}` }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>Earning Multiplier</span>
+              <span style={{ fontSize: 13, fontWeight: 750, color: C.orange }}>{multiplier}</span>
             </div>
-          </div>
-        </div>
-
-        {/* SUPPORT Section */}
-        <div style={{ marginBottom: 20 }}>
-          <p style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 10, paddingLeft: 4 }}>Support</p>
-          <div style={{ background: tk.card, borderRadius: 18, overflow: 'hidden', boxShadow: tk.iconShadow }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer' }} onClick={() => window.location.href = '/support'}>
-              <div style={{ width: 36, height: 36, borderRadius: 11, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              </div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>Customer Support</span>
-              <ChevronRight size={14} color={tk.textMuted} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>VIP Status</span>
+              <span style={{
+                fontSize: 11, fontWeight: 800, padding: '4px 12px', borderRadius: 20,
+                background: isVip ? 'rgba(16,185,129,0.1)' : (darkMode ? 'rgba(255,255,255,0.05)' : '#F1F5F9'),
+                color: isVip ? '#10B981' : tk.textMuted,
+                textTransform: 'uppercase', letterSpacing: '0.04em'
+              }}>
+                {isVip ? 'Active' : 'Inactive'}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Logout Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', cursor: 'pointer', background: 'rgba(220,38,38,.04)', borderRadius: 18, border: '1.5px solid rgba(220,38,38,.1)', marginTop: 8 }} onClick={onLogout}>
-          <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(220,38,38,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><LogOut size={18} stroke="#dc2626" /></div>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#dc2626' }}>Log Out</span>
+        {/* LOGOUT BUTTON */}
+        <div 
+          onClick={onLogout}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '14px 16px',
+            cursor: 'pointer',
+            background: 'rgba(239,68,68,0.04)',
+            borderRadius: 18,
+            border: '1.5px solid rgba(239,68,68,0.15)',
+            marginTop: 20,
+            justifyContent: 'center',
+          }}
+        >
+          <LogOut size={16} stroke="#EF4444" />
+          <span style={{ fontSize: 14, fontWeight: 800, color: '#EF4444' }}>Log Out</span>
         </div>
 
       </div>
 
       {toast && (
-        <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: C.orange, color: '#fff', padding: '10px 22px', borderRadius: 50, fontSize: 13, fontWeight: 700, zIndex: 999 }}>
+        <div style={{ position: 'fixed', bottom: 30, left: '50%', transform: 'translateX(-50%)', background: C.orange, color: '#fff', padding: '10px 22px', borderRadius: 50, fontSize: 13, fontWeight: 700, zIndex: 999 }}>
           {toast}
         </div>
       )}

@@ -1,11 +1,13 @@
-﻿// AdminDashboard.jsx - COMPLETE REWRITE with clickable More tab menu items
+﻿// AdminDashboard.jsx - COMPLETE FIXED VERSION (Photo → Image)
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { API, O } from './adminUtils'
-import { Users, Zap, TrendingUp, CheckSquare, DollarSign, Coins, RefreshCw, Eye, 
-         Wallet, Store, Crown, Share2, PiggyBank, Star, Bell, Image, 
-         BarChart3, Settings, ChevronRight, LayoutDashboard, Gift, Clock,
-         Trophy, ClipboardList, UsersRound, List } from 'lucide-react'
+import { 
+  Users, Zap, TrendingUp, CheckSquare, DollarSign, Coins, RefreshCw, Eye,
+  Wallet, Store, Crown, Share2, PiggyBank, Star, Bell, Image,
+  BarChart3, Settings, ChevronRight, LayoutDashboard, Gift, Clock,
+  Trophy, ClipboardList, UsersRound, List 
+} from 'lucide-react'
 
 function Badge({ children, color }) {
   return (
@@ -33,14 +35,12 @@ function StatItem({ icon: Icon, label, value, color = O }) {
   )
 }
 
-function MenuItem({ icon: Icon, label, description, badge, badgeColor, iconBg, path, onClick }) {
+function MenuItem({ icon: Icon, label, description, badge, badgeColor, iconBg, path }) {
   const navigate = useNavigate()
   
   const handleClick = () => {
     if (path) {
       navigate(path)
-    } else if (onClick) {
-      onClick()
     }
   }
   
@@ -112,7 +112,7 @@ export default function AdminDashboard({ token }) {
     ],
     communication: [
       { icon: Bell, label: 'Notifications', description: 'Push & in-app alerts', path: '/admin/notifications', iconBg: `${O}12` },
-      { icon: Photo, label: 'Carousel', description: 'Posts, banners & media', path: '/admin/carousel', iconBg: `${O}12` },
+      { icon: Image, label: 'Carousel', description: 'Posts, banners & media', path: '/admin/carousel', iconBg: `${O}12` }, // ✅ FIXED: Photo → Image
     ],
     analytics: [
       { icon: BarChart3, label: 'Analytics', description: 'Data exports & insights', path: '/admin/analytics', iconBg: '#14B8A612' },

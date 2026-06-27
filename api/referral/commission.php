@@ -1,104 +1,208 @@
 <?php
-// Called when a user upgrades — credits commission to their referrer
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'POST required']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'POST required'
+    ]);
     exit;
 }
 
-$input         = json_decode(file_get_contents('php://input'), true);
-$upgradingUser = (int)($input['user_id']        ?? 0);  // the user who just paid
-$upgradeAmount = (float)($input['upgrade_amount'] ?? 0); // e.g. 10.00 for Gold
+$input = json_decode(file_get_contents('php://input'), true);
+
+$upgradingUser = (int)($input['user_id'] ?? 0);
+$upgradeAmount = (float)($input['upgrade_amount'] ?? 0);
 
 if (!$upgradingUser || $upgradeAmount <= 0) {
-    echo json_encode(['success' => false, 'message' => 'user_id and upgrade_amount required']);
+    echo json_encode([
+        'success' => false,
+        'message' => 'user_id and upgrade_amount required'
+    ]);
     exit;
 }
 
 $db = getDB();
 
-// Who referred this user?
-$stmt = $db->prepare("SELECT referred_by FROM users WHERE id = ?");
+/*
+|--------------------------------------------------------------------------
+| Get referrer
+|--------------------------------------------------------------------------
+*/
+$stmt = $db->prepare("
+    SELECT referred_by
+    FROM users
+    WHERE id = ?
+");
 $stmt->execute([$upgradingUser]);
+
 $row = $stmt->fetch(PDO::FETCH_ASSOC);
 $referrerId = $row ? (int)$row['referred_by'] : 0;
 
 if (!$referrerId) {
-    echo json_encode(['success' => true, 'message' => 'No referrer — nothing to do']);
+    echo json_encode([
+        'success' => true,
+        'message' => 'No referrer found'
+    ]);
     exit;
 }
 
-// Get referrer's current plan to determine commission %
-$stmt = $db->prepare("SELECT level, is_vip, username FROM users WHERE id = ?");
+/*
+|--------------------------------------------------------------------------
+| Get highest badge
+|--------------------------------------------------------------------------
+*/
+$stmt = $db->prepare("
+    SELECT b.name, b.referral_percent
+    FROM user_badges ub
+    JOIN badges b ON ub.badge_id = b.id
+    WHERE ub.user_id = ?
+    ORDER BY b.referral_percent DESC
+    LIMIT 1
+");
 $stmt->execute([$referrerId]);
-$referrer = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$referrer) {
-    echo json_encode(['success' => false, 'message' => 'Referrer not found']);
+
+$badge = $stmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$badge) {
+    echo json_encode([
+        'success' => true,
+        'message' => 'Referrer has no badge'
+    ]);
     exit;
 }
 
-// Commission rates: Level 0=0%, 1=20%, 2=30%, 3=40%, 4=50%, VIP=60%
-$commissionRates = [0 => 0, 1 => 20, 2 => 30, 3 => 40, 4 => 50];
-$level           = (int)$referrer['level'];
-$isVip           = (int)$referrer['is_vip'];
-$commissionPct   = $isVip ? 60 : ($commissionRates[$level] ?? 0);
+$commissionPct = (float)$badge['referral_percent'];
+$badgeName = $badge['name'];
 
-if ($commissionPct === 0) {
-    echo json_encode(['success' => true, 'message' => 'Referrer has no active plan — no commission']);
-    exit;
+/*
+|--------------------------------------------------------------------------
+| VIP bonus (+10%)
+|--------------------------------------------------------------------------
+*/
+$stmt = $db->prepare("
+    SELECT id
+    FROM user_vip
+    WHERE user_id = ?
+      AND active = 1
+      AND expires_at > NOW()
+    LIMIT 1
+");
+$stmt->execute([$referrerId]);
+
+$isVip = (bool)$stmt->fetch();
+
+if ($isVip) {
+    $commissionPct += 10;
 }
 
-$commissionAmount = round(($upgradeAmount * $commissionPct) / 100, 2);
+/*
+|--------------------------------------------------------------------------
+| Calculate commission
+|--------------------------------------------------------------------------
+*/
+$commissionAmount = round(
+    ($upgradeAmount * $commissionPct) / 100,
+    2
+);
 
 $db->beginTransaction();
+
 try {
-    // Credit referrer's USD balance and referral_earnings
+    /*
+    |--------------------------------------------------------------------------
+    | Credit wallet
+    |--------------------------------------------------------------------------
+    */
     $db->prepare("
         UPDATE users
-        SET usd_balance       = usd_balance + ?,
+        SET usd_balance = usd_balance + ?,
             referral_earnings = referral_earnings + ?
         WHERE id = ?
-    ")->execute([$commissionAmount, $commissionAmount, $referrerId]);
-
-    // Record in commission log
-    $db->prepare("
-        INSERT INTO referral_commissions
-            (referrer_id, referred_user_id, amount, commission_percentage,
-             referrer_plan_at_time, referred_upgrade_amount, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, NOW())
     ")->execute([
-        $referrerId, $upgradingUser, $commissionAmount, $commissionPct,
-        $isVip ? 'VIP' : ('Level ' . $level),
-        $upgradeAmount,
+        $commissionAmount,
+        $commissionAmount,
+        $referrerId
     ]);
 
-    // Notification for referrer
-    $stmt = $db->prepare("SELECT notifications FROM users WHERE id = ?");
+    /*
+    |--------------------------------------------------------------------------
+    | Log commission
+    |--------------------------------------------------------------------------
+    */
+    $db->prepare("
+        INSERT INTO referral_commissions
+        (
+            referrer_id,
+            referred_user_id,
+            amount,
+            commission_percentage,
+            referrer_plan_at_time,
+            referred_upgrade_amount,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
+    ")->execute([
+        $referrerId,
+        $upgradingUser,
+        $commissionAmount,
+        $commissionPct,
+        $isVip ? "{$badgeName} + VIP" : $badgeName,
+        $upgradeAmount
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notification
+    |--------------------------------------------------------------------------
+    */
+    $stmt = $db->prepare("
+        SELECT notifications
+        FROM users
+        WHERE id = ?
+    ");
     $stmt->execute([$referrerId]);
-    $rRow    = $stmt->fetch(PDO::FETCH_ASSOC);
-    $notifs  = json_decode($rRow['notifications'] ?? '[]', true) ?: [];
-    $notifs[] = [
-        'id'      => uniqid(),
-        'type'    => 'referral',
-        'message' => "💰 Referral commission +\${$commissionAmount} ({$commissionPct}%) earned!",
-        'time'    => date('Y-m-d H:i:s'),
-        'read'    => false,
+
+    $userRow = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $notifications = json_decode(
+        $userRow['notifications'] ?? '[]',
+        true
+    ) ?: [];
+
+    $notifications[] = [
+        'id' => uniqid(),
+        'type' => 'referral',
+        'message' => "Referral bonus +\${$commissionAmount} ({$commissionPct}%)",
+        'time' => date('Y-m-d H:i:s'),
+        'read' => false
     ];
-    $db->prepare("UPDATE users SET notifications = ? WHERE id = ?")
-       ->execute([json_encode($notifs), $referrerId]);
+
+    $db->prepare("
+        UPDATE users
+        SET notifications = ?
+        WHERE id = ?
+    ")->execute([
+        json_encode($notifications),
+        $referrerId
+    ]);
 
     $db->commit();
 
     echo json_encode([
-        'success'           => true,
+        'success' => true,
         'commission_amount' => $commissionAmount,
-        'commission_pct'    => $commissionPct,
-        'referrer_id'       => $referrerId,
+        'commission_pct' => $commissionPct,
+        'referrer_id' => $referrerId
     ]);
+
 } catch (Exception $e) {
     $db->rollBack();
-    echo json_encode(['success' => false, 'message' => 'Commission failed: ' . $e->getMessage()]);
+
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }

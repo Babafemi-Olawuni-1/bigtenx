@@ -1,54 +1,155 @@
-import { useState } from 'react'
-import { Sun, Moon, Copy, Share2, Trophy, X, ArrowLeft } from 'lucide-react'
+// ReferScreen.jsx - COMPLETE REDESIGN
+import { useState, useEffect } from 'react'
+import { Sun, Moon, X, ArrowLeft, Copy, Share2, Users, UserPlus, DollarSign, Crown, TrendingUp, Award, ChevronRight } from 'lucide-react'
 import { t, C } from '../dashboard/tokens'
+import { API } from '../auth/api'
 
 const TIERS = [
-  { letter: 'B', name: 'Bronze', percent: '20%', price: '$1', color: '#FF6B00' },
-  { letter: 'S', name: 'Silver', percent: '30%', price: '$5', color: '#7A8AAD' },
-  { letter: 'G', name: 'Gold', percent: '40%', price: '$10', color: '#E5A100' },
-  { letter: 'D', name: 'Diamond', percent: '50%', price: '$50', color: '#FF6B00' },
-  { letter: 'V', name: 'VIP', percent: '$1', price: '$100', color: '#7C3AED' },
+  { letter: 'B', name: 'Bronze', percent: '20%', price: '$1', color: '#CD7F32', bg: 'rgba(205,127,50,0.15)' },
+  { letter: 'S', name: 'Silver', percent: '30%', price: '$5', color: '#C0C0C0', bg: 'rgba(192,192,192,0.15)' },
+  { letter: 'G', name: 'Gold', percent: '40%', price: '$10', color: '#FFD700', bg: 'rgba(255,215,0,0.15)' },
+  { letter: 'D', name: 'Diamond', percent: '50%', price: '$50', color: '#38B6FF', bg: 'rgba(56,182,255,0.15)' },
+  { letter: 'V', name: 'VIP', percent: '$1', price: '$100', color: '#7C3AED', bg: 'rgba(124,58,237,0.15)' }
 ]
 
 function LeaderboardModal({ onClose, darkMode }) {
   const tk = t(darkMode)
-  const [leaderboard] = useState([
-    { name: 'Femtech', earnings: 850000, avatar: 'F', color: '#E5A100' },
-    { name: 'Ayo', earnings: 475600, avatar: 'A', color: '#059669' },
-    { name: 'Sayi', earnings: 30000, avatar: 'S', color: '#7C3AED' },
-    { name: 'Kunle', earnings: 18200, avatar: 'K', color: '#DC2626' },
-    { name: 'BigBoss', earnings: 12500, avatar: 'B', color: '#0891B2' },
-  ])
+  const [leaderboard, setLeaderboard] = useState([])
   const medals = ['🥇', '🥈', '🥉']
 
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await fetch(`${API}/referral/leaderboard.php?limit=10`)
+        const data = await res.json()
+        if (data.success) {
+          setLeaderboard(data.leaderboard)
+        }
+      } catch (err) {
+        console.log(err)
+      }
+    }
+    fetchLeaderboard()
+  }, [])
+
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: tk.card, borderRadius: '28px 28px 0 0', width: '100%', maxWidth: 500, maxHeight: '88%', display: 'flex', flexDirection: 'column' }}>
+    <div onClick={onClose} style={{ 
+      position: 'fixed', inset: 0, zIndex: 1000, 
+      display: 'flex', alignItems: 'flex-end', justifyContent: 'center', 
+      background: 'rgba(0,0,0,0.6)',
+      backdropFilter: 'blur(4px)'
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{ 
+        background: tk.card, 
+        borderRadius: '28px 28px 0 0', 
+        width: '100%', maxWidth: 500, 
+        maxHeight: '80%', 
+        display: 'flex', flexDirection: 'column',
+        boxShadow: '0 -8px 32px rgba(0,0,0,0.1)'
+      }}>
         <div style={{ width: 40, height: 4, borderRadius: 2, background: tk.cardBorder, margin: '12px auto 0' }} />
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px', borderBottom: `1px solid ${tk.cardBorder}` }}>
-          <span style={{ fontSize: 18, fontWeight: 900, color: tk.text }}>🏆 Leaderboard</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 700, color: C.orange }}><svg viewBox="0 0 24 24" width="14" height="14" stroke={C.orange} fill="none" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>This Week</div>
-            <button onClick={onClose} style={{ width: 34, height: 34, borderRadius: '50%', background: darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,31,84,0.06)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><X size={16} stroke={tk.textMuted} /></button>
+
+        <div style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', 
+          padding: '18px 20px 14px', 
+          borderBottom: `1px solid ${tk.cardBorder}`
+        }}>
+          <div>
+            <span style={{ fontSize: 20, fontWeight: 800, color: tk.text }}>Leaderboard</span>
+            <span style={{ fontSize: 12, color: tk.textMuted, marginLeft: 8 }}>Top earners</span>
           </div>
+          <button onClick={onClose} style={{ 
+            width: 34, height: 34, borderRadius: '50%', 
+            background: tk.bg, border: `1px solid ${tk.cardBorder}`,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <X size={16} color={tk.textMuted} />
+          </button>
         </div>
-        <div style={{ margin: '14px 16px 10px', background: darkMode ? '#1a2333' : '#FFF5EC', border: `1.5px solid rgba(255,107,0,.25)`, borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, fontWeight: 900, color: C.orange, fontFamily: 'monospace', minWidth: 32 }}>#407</span>
-          <div style={{ width: 36, height: 36, borderRadius: '50%', background: `linear-gradient(135deg, ${C.orange}, #FF8C00)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff' }}>M</div>
-          <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: tk.text }}>mrmillionx <span style={{ fontSize: 11, color: tk.textMuted, fontWeight: 500 }}>(You)</span></span>
-          <span style={{ fontSize: 14, fontWeight: 900, color: C.orange, fontFamily: 'monospace' }}>$4,000</span>
-        </div>
+
         <div style={{ padding: '4px 16px 32px', overflowY: 'auto' }}>
-          {leaderboard.map((item, idx) => (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 14, marginBottom: 6, background: darkMode ? 'rgba(255,255,255,0.03)' : '#fafbfd', border: `1px solid ${tk.cardBorder}` }}>
-              <div style={{ width: 28, display: 'flex', justifyContent: 'center' }}>{idx < 3 ? <span style={{ fontSize: 14 }}>{medals[idx]}</span> : <span style={{ fontSize: 12, fontWeight: 900, color: tk.textMuted }}>#{idx + 1}</span>}</div>
-              <div style={{ width: 36, height: 36, borderRadius: '50%', background: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900, color: '#fff' }}>{item.avatar}</div>
-              <span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: tk.text }}>{item.name}</span>
-              <span style={{ fontSize: 13, fontWeight: 900, color: C.orange, fontFamily: 'monospace' }}>${item.earnings.toLocaleString()}</span>
+          {leaderboard.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 40, color: tk.textMuted }}>
+              <Users size={32} color={tk.textMuted} style={{ marginBottom: 8, opacity: 0.3 }} />
+              <p style={{ fontSize: 13 }}>No referrals yet</p>
             </div>
-          ))}
+          ) : (
+            leaderboard.map((item, idx) => (
+              <div key={idx} style={{ 
+                display: 'flex', alignItems: 'center', gap: 12, 
+                padding: '12px 14px', borderRadius: 14, 
+                marginBottom: 4,
+                background: idx < 3 ? `${C.orange}08` : 'transparent'
+              }}>
+                <div style={{ width: 28, fontWeight: 700, color: idx < 3 ? C.orange : tk.textMuted }}>
+                  {idx < 3 ? medals[idx] : `#${idx + 1}`}
+                </div>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 600, color: tk.text }}>
+                  {item.username}
+                </span>
+                <span style={{ fontWeight: 800, color: C.orange }}>
+                  ${parseFloat(item.earned || 0).toFixed(2)}
+                </span>
+              </div>
+            ))
+          )}
         </div>
       </div>
+    </div>
+  )
+}
+
+function StatBox({ icon: Icon, label, value, color = C.orange, darkMode }) {
+  const tk = t(darkMode)
+  return (
+    <div style={{
+      background: tk.card,
+      borderRadius: 16,
+      padding: '16px 14px',
+      border: `1px solid ${tk.cardBorder}`,
+      textAlign: 'center',
+      flex: 1
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+        <Icon size={16} color={color} />
+        <span style={{ fontSize: 11, color: tk.textMuted, fontWeight: 500 }}>{label}</span>
+      </div>
+      <span style={{ fontSize: 22, fontWeight: 800, color: tk.text }}>{value}</span>
+    </div>
+  )
+}
+
+function TierBadge({ tier, owned, darkMode, onClick }) {
+  const tk = t(darkMode)
+  return (
+    <div 
+      onClick={onClick}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '8px 14px',
+        borderRadius: 12,
+        background: owned ? tier.bg : 'transparent',
+        border: `1.5px solid ${owned ? tier.color : tk.cardBorder}`,
+        cursor: 'pointer',
+        transition: 'all 0.15s',
+        opacity: owned ? 1 : 0.5,
+        flex: 1,
+        justifyContent: 'center'
+      }}
+      onMouseEnter={e => {
+        if (owned) e.currentTarget.style.transform = 'scale(1.02)'
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'scale(1)'
+      }}
+    >
+      <span style={{ fontWeight: 800, color: tier.color }}>{tier.letter}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: tk.text }}>{tier.percent}</span>
+      {owned && (
+        <span style={{ fontSize: 9, color: '#10B981' }}>✓</span>
+      )}
     </div>
   )
 }
@@ -57,98 +158,344 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
   const tk = t(darkMode)
   const [toast, setToast] = useState(null)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [stats, setStats] = useState({
+    total_invites: 0,
+    active_invites: 0,
+    active_vip: 0,
+    total_earned: 0
+  })
+  const [referrals, setReferrals] = useState([])
+  const [userTiers, setUserTiers] = useState({})
 
-  const showToastMsg = (msg) => {
-    setToast(msg)
+  const referralCode = user?.referral_code ?? user?.referralCode ?? ''
+  const referralLink = referralCode
+    ? `${window.location.origin}/register?ref=${referralCode}`
+    : `${window.location.origin}/register`
+
+  const showToastMsg = (msg, type = 'success') => {
+    setToast({ msg, type })
     setTimeout(() => setToast(null), 2500)
   }
 
-  const referralLink = `https://bigtenx.com/register?ref=${user?.username || 'USER'}`
-  const copyLink = () => { navigator.clipboard.writeText(referralLink); showToastMsg('Link copied! 🎉') }
-  const handleShare = () => { if (navigator.share) { navigator.share({ title: 'Join BigTenX', text: 'Join me on BigTenX and start earning!', url: referralLink }).catch(() => {}) } else { copyLink() } }
+  const copyLink = () => {
+    navigator.clipboard.writeText(referralLink)
+    showToastMsg('Link copied!', 'success')
+  }
 
-  const referrals = [
-    { name: 'Femi', initials: 'F', plan: 2 },
-    { name: 'Seyi', initials: 'S', plan: 4, color: '#7C3AED' },
-    { name: 'Ayo', initials: 'A', plan: 5, color: '#059669' },
-    { name: 'Kola', initials: 'K', plan: 1, color: '#E5A100' },
-    { name: 'Tunde', initials: 'T', plan: 3, color: '#DC2626' },
-  ]
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Join BigTenX',
+          text: 'Join me on BigTenX and start earning!',
+          url: referralLink
+        })
+      } catch {}
+    } else {
+      copyLink()
+    }
+  }
 
-  const TierDots = ({ planIndex }) => {
-    const tiers = ['B', 'S', 'G', 'D', 'V']
-    return (<div style={{ display: 'flex', gap: 3 }}>{tiers.map((tier, idx) => (<div key={tier} style={{ width: 10, height: 10, borderRadius: '50%', background: idx <= planIndex ? C.orange : 'transparent', border: `1.5px solid ${idx <= planIndex ? C.orange : (darkMode ? 'rgba(255,255,255,0.2)' : 'rgba(0,31,84,0.18)')}` }} />))}</div>)
+  useEffect(() => {
+    fetchStats()
+    fetchReferrals()
+    fetchUserTiers()
+  }, [])
+
+  const fetchStats = async () => {
+    if (!user?.id) return
+    try {
+      const res = await fetch(`${API}/referral/stats.php?user_id=${user.id}`)
+      const data = await res.json()
+      if (data?.success) {
+        setStats({
+          total_invites:  data.total_invites  || 0,
+          active_invites: data.active_invites || 0,
+          active_vip:     data.active_vip     || 0,
+          total_earned:   data.total_earned   || 0,
+        })
+      }
+    } catch (err) { console.log(err) }
+  }
+
+  const fetchReferrals = async () => {
+    if (!user?.id) return
+    try {
+      const res = await fetch(`${API}/referral/list.php?user_id=${user.id}`)
+      const data = await res.json()
+      if (data?.success) {
+        setReferrals(Array.isArray(data.referrals) ? data.referrals : [])
+      }
+    } catch (err) { console.log(err) }
+  }
+
+  const fetchUserTiers = async () => {
+    try {
+      const res = await fetch(`${API}/badges/user.php?user_id=${user.id}`)
+      const data = await res.json()
+      if (data.success) {
+        const tiers = {}
+        data.badges.forEach(b => { tiers[b.name.toLowerCase()] = true })
+        setUserTiers(tiers)
+      }
+    } catch (err) { console.log(err) }
+  }
+
+  const getInitials = (name) => {
+    if (!name) return 'U'
+    return name.charAt(0).toUpperCase()
   }
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 20 }}>
-      {/* Top Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px 16px', background: tk.bg }}>
-        <button onClick={onBack} style={{ width: 38, height: 38, borderRadius: '50%', background: tk.card, border: `1.5px solid ${tk.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: tk.iconShadow }}><ArrowLeft size={18} color={tk.text} /></button>
-        <span style={{ fontSize: 22, fontWeight: 900, color: tk.text, letterSpacing: '-.03em' }}>Refer</span>
-        <button onClick={() => setDarkMode(!darkMode)} style={{ width: 38, height: 38, borderRadius: '50%', background: tk.card, border: `1.5px solid ${tk.cardBorder}`, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: tk.iconShadow }}>
-          {darkMode ? <Sun size={15} color={C.orange} /> : <Moon size={15} color={C.navy} />}
+      {/* Header */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '16px 20px',
+        background: tk.bg,
+        borderBottom: `1px solid ${tk.cardBorder}`
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {onBack && (
+            <button onClick={onBack} style={{
+              width: 38, height: 38, borderRadius: '50%',
+              background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer'
+            }}>
+              <ArrowLeft size={18} color={tk.text} />
+            </button>
+          )}
+          <div>
+            <span style={{ fontSize: 18, fontWeight: 800, color: tk.text }}>Referral</span>
+            <span style={{ fontSize: 11, color: tk.textMuted, marginLeft: 8 }}>Invite & earn</span>
+          </div>
+        </div>
+        <button onClick={() => setDarkMode(!darkMode)} style={{
+          width: 38, height: 38, borderRadius: '50%',
+          background: tk.card, border: `1.5px solid ${tk.cardBorder}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer'
+        }}>
+          {darkMode ? <Sun size={15} color={tk.text} /> : <Moon size={15} color={tk.text} />}
         </button>
       </div>
 
       <div style={{ padding: '0 16px' }}>
-        {/* Hero Banner - FIXED: Navy blue gradient */}
-        <div onClick={() => setShowLeaderboard(true)} style={{
-          background: `linear-gradient(130deg, #001F54 0%, #002266 100%)`,
-          borderRadius: 24, padding: '22px 20px', marginBottom: 20,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          cursor: 'pointer', position: 'relative', overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0,31,84,0.28)',
-        }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ marginBottom: 6 }}><span style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-.02em' }}>Top Earners</span></div>
-            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', fontWeight: 500, marginBottom: 12 }}>See who's crushing it this week 🏆</p>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FF6F00', color: '#fff', borderRadius: 50, padding: '7px 16px', fontSize: 12, fontWeight: 800, boxShadow: `0 4px 14px rgba(255,107,0,0.45)` }}>
-              <svg style={{ width: 13, height: 13, fill: '#fff' }} viewBox="0 0 24 24"><path d="M3 3h18v2l-7 7v9l-4-2V12L3 5V3z"/></svg> View Leaderboard
-            </div>
-          </div>
-          <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'rgba(255,255,255,0.10)', border: '1.5px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="#FF6F00"><path d="M12 2l1.5 4.5H18l-3.75 2.75L15.75 14 12 11.25 8.25 14l1.5-4.75L6 6.5h4.5L12 2z"/><rect x="3" y="18" width="18" height="3" rx="1.5"/><rect x="7" y="14" width="2" height="4" rx="1"/><rect x="15" y="14" width="2" height="4" rx="1"/><rect x="11" y="12" width="2" height="6" rx="1"/></svg>
-          </div>
-        </div>
-
-        {/* Stats Row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 20 }}>
-          <div style={{ background: tk.card, borderRadius: 16, padding: '14px 8px 12px', textAlign: 'center', boxShadow: tk.iconShadow, border: `1.5px solid ${tk.cardBorder}` }}><div style={{ fontSize: 9, fontWeight: 800, color: tk.textMuted, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Total Invites</div><div style={{ fontSize: 22, fontWeight: 900, color: C.orange }}>0</div></div>
-          <div style={{ background: tk.card, borderRadius: 16, padding: '14px 8px 12px', textAlign: 'center', boxShadow: tk.iconShadow, border: `1.5px solid ${tk.cardBorder}` }}><div style={{ fontSize: 9, fontWeight: 800, color: tk.textMuted, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Active Invites</div><div style={{ fontSize: 22, fontWeight: 900, color: C.orange }}>0</div></div>
-          <div style={{ background: tk.card, borderRadius: 16, padding: '14px 8px 12px', textAlign: 'center', boxShadow: tk.iconShadow, border: `1.5px solid ${tk.cardBorder}` }}><div style={{ fontSize: 9, fontWeight: 800, color: tk.textMuted, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Active VIP</div><div style={{ fontSize: 22, fontWeight: 900, color: C.orange }}>0</div></div>
-          <div style={{ background: tk.card, borderRadius: 16, padding: '14px 8px 12px', textAlign: 'center', boxShadow: tk.iconShadow, border: `1.5px solid ${tk.cardBorder}` }}><div style={{ fontSize: 9, fontWeight: 800, color: tk.textMuted, letterSpacing: '.1em', textTransform: 'uppercase', marginBottom: 8 }}>Total Earned</div><div style={{ fontSize: 17, fontWeight: 900, color: C.orange }}>$0.00</div></div>
+        {/* Stats Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginTop: 16 }}>
+          <StatBox icon={UserPlus} label="Total" value={stats.total_invites} darkMode={darkMode} />
+          <StatBox icon={Users} label="Active" value={stats.active_invites} color="#10B981" darkMode={darkMode} />
+          <StatBox icon={Crown} label="VIP" value={stats.active_vip} color="#8B5CF6" darkMode={darkMode} />
+          <StatBox icon={DollarSign} label="Earned" value={`$${parseFloat(stats.total_earned).toFixed(2)}`} color={C.orange} darkMode={darkMode} />
         </div>
 
         {/* Commission Tiers */}
-        <div style={{ background: tk.card, borderRadius: 18, padding: 18, marginBottom: 18, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase', marginBottom: 14 }}>Commission Tiers</div>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16, overflowX: 'auto', paddingBottom: 4 }}>
-            {TIERS.map(tier => (<div key={tier.letter} style={{ flex: 1, minWidth: 62, borderRadius: 14, padding: '14px 6px 12px', textAlign: 'center', background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fc', border: tier.letter === 'B' ? `2px solid ${C.orange}` : '2px solid transparent' }}><span style={{ fontSize: 24, fontWeight: 900, display: 'block', marginBottom: 6, color: tier.color }}>{tier.letter}</span><span style={{ fontSize: 13, fontWeight: 800, color: tk.text }}>{tier.percent}</span></div>))}
+        <div style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <TrendingUp size={16} color={C.orange} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: tk.text }}>Your Commission Tiers</span>
           </div>
-          <div style={{ fontSize: 12, color: tk.textMuted, fontStyle: 'italic', lineHeight: 1.5, background: darkMode ? 'rgba(255,255,255,0.05)' : '#f8f9fc', padding: '10px 12px', borderRadius: 12 }}>Your plan is Bronze — your referral commission is 20%</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 6 }}>
+            {TIERS.map(tier => (
+              <TierBadge 
+                key={tier.letter}
+                tier={tier}
+                owned={userTiers[tier.name.toLowerCase()] || tier.letter === 'B'}
+                darkMode={darkMode}
+                onClick={() => {}}
+              />
+            ))}
+          </div>
+          <p style={{ fontSize: 10, color: tk.textMuted, marginTop: 8, textAlign: 'center' }}>
+            <Crown size={12} style={{ display: 'inline', marginRight: 4 }} />
+            Commission based on your highest badge
+          </p>
         </div>
 
         {/* Referral Link */}
-        <div style={{ background: tk.card, borderRadius: 18, padding: '4px 4px 4px 18px', marginBottom: 18, display: 'flex', alignItems: 'center', gap: 12, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
-          <span style={{ flex: 1, fontSize: 12, color: tk.textMuted, fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{referralLink}</span>
-          <button onClick={copyLink} style={{ background: C.orange, color: '#fff', borderRadius: 14, padding: '11px 22px', fontSize: 13, fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8, boxShadow: `0 4px 14px rgba(255,107,0,0.35)`, cursor: 'pointer', border: 'none' }}><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copy</button>
+        <div style={{ marginTop: 20 }}>
+          <div style={{
+            background: tk.card,
+            borderRadius: 16,
+            padding: '14px 16px',
+            border: `1px solid ${tk.cardBorder}`,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: tk.textMuted, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+                Your Referral Link
+              </div>
+              <span style={{ fontSize: 12, color: tk.text, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                {referralLink}
+              </span>
+            </div>
+            <button onClick={copyLink} style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '8px 14px',
+              borderRadius: 10,
+              background: C.orange,
+              color: '#fff',
+              border: 'none',
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}>
+              <Copy size={14} /> Copy
+            </button>
+          </div>
         </div>
 
         {/* Share Button */}
-        <button onClick={handleShare} style={{ width: '100%', background: tk.card, border: `1.5px solid ${tk.cardBorder}`, borderRadius: 18, padding: 14, marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, fontSize: 14, fontWeight: 800, color: tk.text, cursor: 'pointer', boxShadow: tk.iconShadow }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={tk.text} strokeWidth="2.2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Share invite link
+        <button onClick={handleShare} style={{
+          width: '100%',
+          marginTop: 12,
+          padding: '12px',
+          borderRadius: 14,
+          background: '#001F54',
+          color: '#fff',
+          border: 'none',
+          fontWeight: 700,
+          fontSize: 14,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8
+        }}>
+          <Share2 size={16} /> Share Invite Link
         </button>
 
         {/* My Referrals */}
-        <div style={{ background: tk.card, borderRadius: 18, padding: 18, marginBottom: 20, boxShadow: tk.iconShadow, border: `1px solid ${tk.cardBorder}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}><div style={{ fontSize: 10, fontWeight: 800, color: tk.textMuted, letterSpacing: '.12em', textTransform: 'uppercase' }}>My Referrals</div><span style={{ fontSize: 12, fontWeight: 700, color: C.orange, background: darkMode ? 'rgba(255,111,0,0.15)' : '#FFF5EC', borderRadius: 50, padding: '4px 14px' }}>5 people</span></div>
-          {referrals.map((ref, idx) => (<div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 0', borderBottom: idx < referrals.length - 1 ? `1px solid ${tk.cardBorder}` : 'none' }}><div style={{ width: 40, height: 40, borderRadius: '50%', background: ref.color || `linear-gradient(135deg, ${C.navy}, ${C.navy2})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, color: '#fff' }}>{ref.initials}</div><span style={{ flex: 1, fontSize: 14, fontWeight: 700, color: tk.text }}>{ref.name}</span><TierDots planIndex={ref.plan} /></div>))}
+        <div style={{ marginTop: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Users size={16} color={C.orange} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: tk.text }}>My Referrals</span>
+            </div>
+            <span style={{ fontSize: 12, color: tk.textMuted }}>{referrals.length} people</span>
+          </div>
+
+          {referrals.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '40px 20px',
+              background: tk.card,
+              borderRadius: 16,
+              border: `1px solid ${tk.cardBorder}`,
+              color: tk.textMuted
+            }}>
+              <UserPlus size={32} color={tk.textMuted} style={{ marginBottom: 8, opacity: 0.3 }} />
+              <p style={{ fontSize: 13, fontWeight: 500 }}>No referrals yet</p>
+              <p style={{ fontSize: 11, marginTop: 4 }}>Share your link to start earning!</p>
+            </div>
+          ) : (
+            referrals.map((ref, idx) => (
+              <div key={idx} style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '12px 14px',
+                background: tk.card,
+                borderRadius: 14,
+                marginBottom: 6,
+                border: `1px solid ${tk.cardBorder}`
+              }}>
+                <div style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  background: `linear-gradient(135deg, ${C.orange}, #FF9A00)`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: '#fff'
+                }}>
+                  {getInitials(ref.username)}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: tk.text }}>{ref.username}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    {['B', 'S', 'G', 'D', 'V'].map((tier, i) => (
+                      <div
+                        key={tier}
+                        style={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: '50%',
+                          background: i <= ref.plan_index ? C.orange : 'transparent',
+                          border: `1px solid ${i <= ref.plan_index ? C.orange : tk.cardBorder}`
+                        }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <span style={{ fontSize: 12, color: C.orange, fontWeight: 700 }}>
+                  +{ref.earned || 0}
+                </span>
+              </div>
+            ))
+          )}
         </div>
+
+        {/* Leaderboard Button */}
+        <button 
+          onClick={() => setShowLeaderboard(true)}
+          style={{
+            width: '100%',
+            marginTop: 16,
+            padding: '12px',
+            borderRadius: 14,
+            background: 'transparent',
+            border: `1.5px solid ${tk.cardBorder}`,
+            color: tk.text,
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between'
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Award size={16} color={C.orange} /> View Leaderboard
+          </span>
+          <ChevronRight size={16} color={tk.textMuted} />
+        </button>
       </div>
 
-      {showLeaderboard && <LeaderboardModal onClose={() => setShowLeaderboard(false)} darkMode={darkMode} />}
-      {toast && <div style={{ position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)', background: C.orange, color: '#fff', padding: '10px 22px', borderRadius: 50, fontSize: 13, fontWeight: 700, zIndex: 999 }}>{toast}</div>}
+      {showLeaderboard && (
+        <LeaderboardModal
+          onClose={() => setShowLeaderboard(false)}
+          darkMode={darkMode}
+        />
+      )}
+
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          bottom: 90,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: toast.type === 'error' ? '#EF4444' : C.orange,
+          color: '#fff',
+          padding: '10px 22px',
+          borderRadius: 50,
+          fontSize: 13,
+          fontWeight: 700,
+          boxShadow: `0 4px 16px ${toast.type === 'error' ? 'rgba(239,68,68,0.3)' : 'rgba(255,111,0,0.3)'}`
+        }}>
+          {toast.msg}
+        </div>
+      )}
     </div>
   )
 }

@@ -31,7 +31,7 @@ function decodeSteps(&$task): void {
 
 function castTask(array &$task): void {
     $task['id']               = (int)$task['id'];
-    $task['reward_xp']        = (int)($task['reward_xp']        ?? 0);
+    $task['reward_xp']        = (float)($task['reward_xp'] ?? 0);
     $task['apply_multiplier'] = (int)($task['apply_multiplier'] ?? 1);
     $task['active']           = (int)($task['active']           ?? 1);
     $task['max_users']        = isset($task['max_users']) && $task['max_users'] !== null ? (int)$task['max_users'] : null;
@@ -41,10 +41,38 @@ function castTask(array &$task): void {
 // ── LIST ──────────────────────────────────────────────────────────────────────
 if ($method === 'GET' && !isset($_GET['id'])) {
     try {
-        $rows = $db->query("SELECT * FROM admin_tasks ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $db->query("
+            SELECT 
+                at.*,
+                (
+                    SELECT COUNT(*)
+                    FROM daily_task_attempts dta
+                    WHERE dta.task_id = at.id
+                ) AS participants,
+                (
+                    SELECT COUNT(*)
+                    FROM task_completions tc
+                    WHERE tc.task_id = at.id
+                ) AS completed
+            FROM admin_tasks at
+            ORDER BY at.created_at DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+        
         foreach ($rows as &$row) {
             castTask($row);
-            // Attach individual code count
+            
+            $row['participants'] = (int)($row['participants'] ?? 0);
+            $row['completed'] = (int)($row['completed'] ?? 0);
+            
+            if ($row['type'] === 'hot' && !empty($row['max_users'])) {
+                $row['remaining_slots'] = max(
+                    0,
+                    (int)$row['max_users'] - $row['completed']
+                );
+            } else {
+                $row['remaining_slots'] = null;
+            }
+            
             if ($row['code_type'] === 'individual') {
                 try {
                     $cs = $db->prepare("SELECT COUNT(*) FROM task_codes WHERE task_id = ?");
@@ -80,12 +108,15 @@ if ($method === 'POST') {
     $description      = trim($in['description'] ?? '');
     $type             = in_array($in['type'] ?? '', ['daily','hot']) ? $in['type'] : 'daily';
     $url              = trim($in['url']         ?? '');
+    if ($type === 'daily') {
+        $url = '';
+    }
     $platform         = trim($in['platform']    ?? '');
-    $reward_xp        = max(0, (int)($in['reward_xp'] ?? $in['reward'] ?? 0));
+    $reward_xp        = max(0, (float)($in['reward_xp'] ?? $in['reward'] ?? 0));
     $reward_type      = $in['reward_type'] === 'cash' ? 'cash' : 'xp';
     $apply_multiplier = (int)($in['apply_multiplier'] ?? 1) ? 1 : 0;
     $code_type        = $in['code_type'] === 'individual' ? 'individual' : 'universal';
-    $hot_limit_type   = trim($in['hot_limit_type'] ?? 'timer'); // 'timer' | 'users'
+    $hot_limit_type   = trim($in['hot_limit_type'] ?? 'timer');
     $expires_at       = ($type === 'hot' && $hot_limit_type === 'timer' && !empty($in['expires_at'])) ? $in['expires_at'] : null;
     $max_users        = ($type === 'hot' && $hot_limit_type === 'users' && !empty($in['max_users'])) ? (int)$in['max_users'] : null;
     $steps_raw        = $in['steps'] ?? [];
@@ -93,15 +124,22 @@ if ($method === 'POST') {
 
     if (empty($title)) { echo json_encode(['success'=>false,'message'=>'Title required']); exit; }
     if ($reward_xp <= 0) { echo json_encode(['success'=>false,'message'=>'Reward amount must be greater than 0']); exit; }
+    
+    if (empty($steps_raw) || !is_array($steps_raw) || count($steps_raw) < 1) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'At least one task step is required'
+        ]);
+        exit;
+    }
+    
     if ($type === 'hot' && $hot_limit_type === 'timer' && !$expires_at) { echo json_encode(['success'=>false,'message'=>'Hot offer with Timer requires an expiry date']); exit; }
     if ($type === 'hot' && $hot_limit_type === 'users' && !$max_users) { echo json_encode(['success'=>false,'message'=>'Hot offer with Max Users requires a user limit']); exit; }
 
     $universal_code = null;
     if ($code_type === 'universal') {
-        // If admin provided a code, validate & use it; otherwise auto-generate
         $provided = strtoupper(trim($in['verify_code'] ?? ''));
         if (!empty($provided)) {
-            // Check it's not already in use by another task
             $chk = $db->prepare("SELECT id FROM admin_tasks WHERE verify_code = ? AND id != 0");
             $chk->execute([$provided]);
             if ($chk->fetch()) {
@@ -126,15 +164,31 @@ if ($method === 'POST') {
         ]);
         $taskId = (int)$db->lastInsertId();
 
-        // Auto-generate individual codes if requested
         $generatedCodes = [];
+        
+        // ─── FIX: Improved individual code generation ─────────────────────
         if ($code_type === 'individual') {
-            $count  = max(1, min(500, (int)($in['individual_count'] ?? 10)));
-            $insert = $db->prepare("INSERT INTO task_codes (task_id, code) VALUES (?,?)");
-            for ($i = 0; $i < $count; $i++) {
-                $c = genCode($db);
-                $insert->execute([$taskId, $c]);
-                $generatedCodes[] = $c;
+            $count = isset($in['individual_count'])
+                ? max(1, min(500, (int)$in['individual_count']))
+                : 10;
+
+            try {
+                $insert = $db->prepare("
+                    INSERT INTO task_codes (task_id, code, used_by, used_at)
+                    VALUES (?, ?, NULL, NULL)
+                ");
+
+                for ($i = 0; $i < $count; $i++) {
+                    $c = genCode($db);
+                    $insert->execute([$taskId, $c]);
+                    $generatedCodes[] = $c;
+                }
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'message' => 'Individual code generation failed: ' . $e->getMessage()
+                ]);
+                exit;
             }
         }
 
@@ -160,8 +214,11 @@ if ($method === 'PUT') {
     $description      = trim($in['description'] ?? '');
     $type             = in_array($in['type'] ?? '', ['daily','hot']) ? $in['type'] : 'daily';
     $url              = trim($in['url']         ?? '');
+    if ($type === 'daily') {
+        $url = '';
+    }
     $platform         = trim($in['platform']    ?? '');
-    $reward_xp        = max(0, (int)($in['reward_xp'] ?? $in['reward'] ?? 0));
+    $reward_xp        = max(0, (float)($in['reward_xp'] ?? $in['reward'] ?? 0));
     $reward_type      = $in['reward_type'] === 'cash' ? 'cash' : 'xp';
     $apply_multiplier = (int)($in['apply_multiplier'] ?? 1) ? 1 : 0;
     $hot_limit_type   = trim($in['hot_limit_type'] ?? 'timer');
