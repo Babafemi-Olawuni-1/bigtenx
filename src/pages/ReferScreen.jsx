@@ -1,8 +1,55 @@
 // ReferScreen.jsx - COMPLETE REDESIGN
 import { useState, useEffect } from 'react'
-import { Sun, Moon, X, ArrowLeft, Copy, Share2, Users, UserPlus, DollarSign, Crown, TrendingUp, Award, ChevronRight } from 'lucide-react'
+import { Sun, Moon, X, ArrowLeft, Copy, Share2, Users, UserPlus, DollarSign, Crown, TrendingUp, Award, ChevronRight, UserCheck } from 'lucide-react'
 import { t, C } from '../dashboard/tokens'
 import { API } from '../auth/api'
+
+function AddReferrerBox({ user, darkMode, tk, onSuccess }) {
+  const [code, setCode]       = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError]     = useState('')
+
+  const submit = async () => {
+    if (!code.trim()) { setError('Enter a referral code'); return }
+    setError('')
+    setLoading(true)
+    try {
+      const res  = await fetch(`${API}/referral/add_referrer.php`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, referral_code: code.trim() })
+      })
+      const data = await res.json()
+      if (data.success) { onSuccess(data.referrer_username); setCode('') }
+      else setError(data.message || 'Code not found')
+    } catch { setError('Network error') }
+    finally { setLoading(false) }
+  }
+
+  return (
+    <div style={{ background: tk.card, borderRadius: 14, padding: 14, border: `1px solid ${tk.cardBorder}` }}>
+      <div style={{ display: 'flex', gap: 10 }}>
+        <input
+          type="text" value={code} onChange={e => setCode(e.target.value)}
+          placeholder="Enter referral code..."
+          style={{
+            flex: 1, padding: '10px 14px', borderRadius: 10,
+            border: `1.5px solid ${error ? '#EF4444' : tk.cardBorder}`,
+            background: darkMode ? 'rgba(255,255,255,0.06)' : '#F7F8FC',
+            color: tk.text, fontSize: 13, fontFamily: 'inherit', outline: 'none',
+          }}
+        />
+        <button onClick={submit} disabled={loading} style={{
+          padding: '10px 18px', borderRadius: 10, background: C.orange,
+          border: 'none', color: '#fff', fontWeight: 700, fontSize: 13,
+          cursor: 'pointer', opacity: loading ? 0.7 : 1, whiteSpace: 'nowrap',
+        }}>
+          {loading ? '...' : 'Apply'}
+        </button>
+      </div>
+      {error && <div style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>{error}</div>}
+    </div>
+  )
+}
 
 const TIERS = [
   { letter: 'B', name: 'Bronze', percent: '20%', price: '$1', color: '#CD7F32', bg: 'rgba(205,127,50,0.15)' },
@@ -354,23 +401,23 @@ export default function ReferScreen({ user, darkMode, setDarkMode, onBack }) {
 
         {/* Share Button */}
         <button onClick={handleShare} style={{
-          width: '100%',
-          marginTop: 12,
-          padding: '12px',
-          borderRadius: 14,
-          background: '#001F54',
-          color: '#fff',
-          border: 'none',
-          fontWeight: 700,
-          fontSize: 14,
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8
+          width: '100%', marginTop: 12, padding: '12px', borderRadius: 14,
+          background: '#001F54', color: '#fff', border: 'none',
+          fontWeight: 700, fontSize: 14, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
         }}>
           <Share2 size={16} /> Share Invite Link
         </button>
+
+        {/* Add Referrer (only if user has no referrer) */}
+        {!user?.referred_by && (
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: tk.textMuted, marginBottom: 8 }}>
+              Did someone refer you? Add their code:
+            </div>
+            <AddReferrerBox user={user} darkMode={darkMode} tk={tk} onSuccess={(username) => showToastMsg(`Referrer set to ${username}!`, 'success')} />
+          </div>
+        )}
 
         {/* My Referrals */}
         <div style={{ marginTop: 24 }}>

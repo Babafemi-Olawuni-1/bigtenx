@@ -8,33 +8,83 @@ requireAdmin();
 
 $db = getDB();
 
-// Helper: safely run a query and return a single column value
-function safeCount($db, $sql, $default = 0) {
+function safeVal($db, $sql, $default = 0) {
     try {
-        $result = $db->query($sql)->fetchColumn();
-        return $result === false ? $default : (int)$result;
-    } catch (Exception $e) {
-        return $default;
-    }
+        $r = $db->query($sql)->fetchColumn();
+        return $r === false ? $default : $r;
+    } catch (Exception $e) { return $default; }
 }
 
-function safeQuery($db, $sql, $default = []) {
+function safeRows($db, $sql, $default = []) {
     try {
         return $db->query($sql)->fetchAll(PDO::FETCH_ASSOC) ?: $default;
-    } catch (Exception $e) {
-        return $default;
-    }
+    } catch (Exception $e) { return $default; }
 }
 
-$stats = [
-    'total_users'      => safeCount($db, "SELECT COUNT(*) FROM users"),
-    'verified_users'   => safeCount($db, "SELECT COUNT(*) FROM users WHERE is_verified = 1"),
-    'paid_users'       => safeCount($db, "SELECT COUNT(*) FROM users WHERE level_paid = 1"),
-    'total_xp'         => safeCount($db, "SELECT COALESCE(SUM(coins), 0) FROM users"),
-    'active_tasks'     => safeCount($db, "SELECT COUNT(*) FROM admin_tasks WHERE active = 1"),
-    'task_completions' => safeCount($db, "SELECT COUNT(*) FROM task_completions"),
-    'level_breakdown'  => safeQuery($db, "SELECT level, COUNT(*) as cnt FROM users GROUP BY level ORDER BY level"),
-    'recent_users'     => safeQuery($db, "SELECT id, username, email, country, level, coins, created_at FROM users ORDER BY created_at DESC LIMIT 10"),
-];
+// ── Core user stats (using only real columns) ──────────────────────────────
+$total_users    = (int)safeVal($db, "SELECT COUNT(*) FROM users");
+$verified_users = (int)safeVal($db, "SELECT COUNT(*) FROM users WHERE email_verified = 1");
+$vip_users      = (int)safeVal($db, "SELECT COUNT(*) FROM users WHERE is_vip = 1");
+$paid_users     = (int)safeVal($db, "SELECT COUNT(*) FROM users WHERE level > 1");
+$total_xp       = (int)safeVal($db, "SELECT COALESCE(SUM(coins),0) FROM users");
 
-echo json_encode(['success' => true, 'stats' => $stats]);
+// ── Task stats ─────────────────────────────────────────────────────────────
+$active_tasks     = (int)safeVal($db, "SELECT COUNT(*) FROM admin_tasks WHERE active = 1");
+$task_completions = (int)safeVal($db, "SELECT COUNT(*) FROM task_completions");
+
+// ── Deposit stats ──────────────────────────────────────────────────────────
+$total_deposited   = (float)safeVal($db, "SELECT COALESCE(SUM(amount),0) FROM wallet_transactions WHERE type='deposit' AND status='completed'", 0);
+$pending_deposits  = (int)safeVal($db, "SELECT COUNT(*) FROM wallet_transactions WHERE type='deposit' AND status='pending'");
+$rejected_deposits = (int)safeVal($db, "SELECT COUNT(*) FROM wallet_transactions WHERE type='deposit' AND status='rejected'");
+// Deposit fees: approximate 1.5% of completed deposits
+$deposit_fees = round($total_deposited * 0.015, 2);
+
+// ── Withdrawal stats ───────────────────────────────────────────────────────
+$total_withdrawn    = (float)safeVal($db, "SELECT COALESCE(SUM(amount),0) FROM wallet_transactions WHERE type='withdrawal' AND status='completed'", 0);
+$pending_withdrawals= (int)safeVal($db, "SELECT COUNT(*) FROM wallet_transactions WHERE type='withdrawal' AND status='pending'");
+$rejected_withdrawals=(int)safeVal($db, "SELECT COUNT(*) FROM wallet_transactions WHERE type='withdrawal' AND status='rejected'");
+// Withdrawal fees: approximate 2% of completed withdrawals
+$withdrawal_fees = round($total_withdrawn * 0.02, 2);
+
+// ── Revenue from admin_settings ───────────────────────────────────────────
+$revenue = 0;
+try {
+    $rev = $db->query("SELECT value FROM admin_settings WHERE `key` = 'month_revenue' LIMIT 1");
+    $revenue = (float)($rev->fetchColumn() ?: 0);
+} catch (Exception $e) {}
+
+// ── Level breakdown ────────────────────────────────────────────────────────
+$level_breakdown = safeRows($db, "SELECT level, COUNT(*) as cnt FROM users GROUP BY level ORDER BY level");
+
+// ── Recent signups ─────────────────────────────────────────────────────────
+$recent_users = safeRows($db,
+    "SELECT id, username, email, country, level, coins, created_at
+     FROM users ORDER BY created_at DESC LIMIT 10"
+);
+
+echo json_encode([
+    'success' => true,
+    'stats' => [
+        'total_users'          => $total_users,
+        'verified_users'       => $verified_users,
+        'paid_users'           => $paid_users,
+        'vip_users'            => $vip_users,
+        'total_xp'             => $total_xp,
+        'active_tasks'         => $active_tasks,
+        'task_completions'     => $task_completions,
+        'revenue'              => $revenue,
+        // deposits
+        'total_deposited'      => $total_deposited,
+        'pending_deposits'     => $pending_deposits,
+        'rejected_deposits'    => $rejected_deposits,
+        'deposit_fees'         => $deposit_fees,
+        // withdrawals
+        'total_withdrawn'      => $total_withdrawn,
+        'pending_withdrawals'  => $pending_withdrawals,
+        'rejected_withdrawals' => $rejected_withdrawals,
+        'withdrawal_fees'      => $withdrawal_fees,
+        // breakdown
+        'level_breakdown'      => $level_breakdown,
+        'recent_users'         => $recent_users,
+    ],
+]);

@@ -103,29 +103,6 @@ function HomeScreen({
         onWithdraw={() => setActiveTab('wallet-withdraw')}
       />
 
-      {/* Badge Display */}
-      {user?.current_badge && (
-        <div
-          style={{
-            margin: '12px 16px',
-            padding: 14,
-            borderRadius: 16,
-            background: tk.card,
-            border: `1px solid ${tk.cardBorder}`
-          }}
-        >
-          <div style={{ fontSize: 12, color: tk.textMuted }}>
-            Current Badge
-          </div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: C.orange }}>
-            {user.current_badge}
-          </div>
-          <div style={{ fontSize: 12, color: tk.textMuted }}>
-            Multiplier: {user.current_multiplier || '1.0'}x
-          </div>
-        </div>
-      )}
-
       <StreakBar user={user} updateUser={updateUser} onUpgrade={onUpgrade} />
       <ServicesGrid darkMode={darkMode} onServiceClick={handleServiceClick} />
       <PromoCarousel darkMode={darkMode} />
@@ -177,6 +154,9 @@ export default function Dashboard({ user: initialUser, onLogout }) {
           usd_balance: parseFloat(data.wallet.usd_balance),
           usdBalance: parseFloat(data.wallet.usd_balance),
           coins: parseInt(data.wallet.coins),
+          deposit_status: parseInt(data.wallet.deposit_status ?? 1),
+          withdraw_status: parseInt(data.wallet.withdraw_status ?? 1),
+          account_status: parseInt(data.wallet.account_status ?? 1),
           history: data.history || [],
           notifications: data.notifications || [],
           current_badge: data.current_badge || null,
@@ -242,6 +222,7 @@ export default function Dashboard({ user: initialUser, onLogout }) {
         return (
           <ProfilePage
             user={user}
+            updateUser={updateUser}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             onLogout={onLogout}

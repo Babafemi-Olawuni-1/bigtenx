@@ -116,13 +116,12 @@ try {
     | Credit wallet
     |--------------------------------------------------------------------------
     */
+    // Only update usd_balance — referral_earnings column doesn't exist in this schema
     $db->prepare("
         UPDATE users
-        SET usd_balance = usd_balance + ?,
-            referral_earnings = referral_earnings + ?
+        SET usd_balance = usd_balance + ?
         WHERE id = ?
     ")->execute([
-        $commissionAmount,
         $commissionAmount,
         $referrerId
     ]);

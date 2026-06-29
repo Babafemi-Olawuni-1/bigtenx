@@ -24,11 +24,12 @@ function safeCount($db, $sql, $params = []) {
 $totalInvites = safeCount($db,
     "SELECT COUNT(*) FROM users WHERE referred_by = ?", [$userId]);
 
+// "active" = has upgraded to a paid level (level > 1) or is VIP
 $activeInvites = safeCount($db,
     "SELECT COUNT(DISTINCT u.id)
      FROM users u
      WHERE u.referred_by = ?
-       AND u.level_paid = 1",
+       AND (u.level > 1 OR u.is_vip = 1)",
     [$userId]);
 
 // Fall back gracefully if task_completions or referral_commissions don't exist

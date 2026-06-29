@@ -42,7 +42,7 @@ export default function AdminLayout({ children, onLogout }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F7F8FC', paddingBottom: '70px' }}>
+    <div style={{ minHeight: '100vh', background: '#F7F8FC', paddingBottom: '90px' }}>
       {/* Top Header Bar */}
       <div style={{ 
         background: '#fff', 
@@ -190,8 +190,8 @@ export default function AdminLayout({ children, onLogout }) {
         </>
       )}
 
-      {/* Main Content - NO PADDING on sides for mobile */}
-      <div style={{ padding: '16px', overflowX: 'auto' }}>
+      {/* Main Content */}
+      <div style={{ padding: '16px 16px 100px 16px', overflowX: 'auto' }}>
         {children}
       </div>
 
