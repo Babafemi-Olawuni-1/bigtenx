@@ -88,6 +88,202 @@ function CurrencyDropdown({ value, onChange, show, setShow, darkMode, tk }) {
   );
 }
 
+// ── TRANSACTION TYPE META ─────────────────────────────────────────────────
+const TX_META = {
+  deposit:       { label: 'Deposit',       credit: true,  color: '#10b981', icon: 'down' },
+  withdrawal:    { label: 'Withdrawal',    credit: false, color: '#EF4444', icon: 'up'   },
+  admin_credit:  { label: 'Admin Credit',  credit: true,  color: '#10b981', icon: 'down' },
+  admin_debit:   { label: 'Admin Debit',   credit: false, color: '#EF4444', icon: 'up'   },
+  badge_purchase:{ label: 'Badge Purchase',credit: false, color: '#8B5CF6', icon: 'up'   },
+  streak_reward: { label: 'Weekly Reward', credit: true,  color: '#F59E0B', icon: 'gift' },
+  task_reward:   { label: 'Task Reward',   credit: true,  color: '#3B82F6', icon: 'star' },
+  referral:      { label: 'Referral Bonus',credit: true,  color: C.orange,  icon: 'users'},
+  vip_purchase:  { label: 'VIP Purchase',  credit: false, color: '#7C3AED', icon: 'crown'},
+}
+function getTxMeta(type) {
+  return TX_META[type] || { label: type?.replace(/_/g,' ')?.replace(/\b\w/g,c=>c.toUpperCase()) || 'Transaction', credit: true, color: '#8899AA', icon: 'dot' }
+}
+
+function TxIcon({ icon, color }) {
+  const bg = color + '18'
+  return (
+    <div style={{ width: 42, height: 42, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      {icon === 'down'  && <ArrowDownToLine size={17} color={color} />}
+      {icon === 'up'    && <ArrowUpFromLine size={17} color={color} />}
+      {icon === 'gift'  && <span style={{ fontSize: 17 }}>🎁</span>}
+      {icon === 'star'  && <span style={{ fontSize: 17 }}>⭐</span>}
+      {icon === 'users' && <span style={{ fontSize: 17 }}>👥</span>}
+      {icon === 'crown' && <span style={{ fontSize: 17 }}>👑</span>}
+      {icon === 'dot'   && <div style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />}
+    </div>
+  )
+}
+
+function HistoryTab({ transactions, loadingHistory, loadHistory, darkMode, tk }) {
+  const [selected, setSelected] = useState(null)
+
+  const statusColor = (s) => s === 'completed' ? '#10b981' : s === 'rejected' ? '#EF4444' : '#F59E0B'
+  const statusBg    = (s) => s === 'completed' ? '#10b98115' : s === 'rejected' ? '#EF444415' : '#F59E0B15'
+
+  return (
+    <div style={{ background: tk.card, borderRadius: 24, padding: 24, border: `1px solid ${tk.cardBorder}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <span style={{ fontSize: 15, fontWeight: 800, color: tk.text }}>Transaction History</span>
+        <button onClick={loadHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6 }}>
+          <RefreshCw size={15} color="#8899AA" />
+        </button>
+      </div>
+
+      {loadingHistory ? (
+        <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', border: `2px solid ${C.orange}`, borderTopColor: 'transparent', animation: 'spin 1s linear infinite', margin: '0 auto 12px' }} />
+          <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+          Loading...
+        </div>
+      ) : transactions.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <History size={38} color={tk.cardBorder} style={{ marginBottom: 12 }} />
+          <div style={{ fontSize: 14, fontWeight: 700, color: tk.text }}>No transactions yet</div>
+          <div style={{ fontSize: 12, color: '#8899AA', marginTop: 4 }}>Deposits, withdrawals and earnings appear here</div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {transactions.map((tx, i) => {
+            const meta = getTxMeta(tx.type)
+            const sign = meta.credit ? '+' : '-'
+            const amt  = parseFloat(tx.amount || 0)
+            const date = new Date(tx.created_at)
+            return (
+              <div key={i} onClick={() => setSelected(tx)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '13px 14px', borderRadius: 14, cursor: 'pointer',
+                  background: darkMode ? 'rgba(255,255,255,0.04)' : '#F7F9FC',
+                  border: `1px solid ${tk.cardBorder}`,
+                  transition: 'background 0.15s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.07)' : '#EEF2F8'}
+                onMouseLeave={e => e.currentTarget.style.background = darkMode ? 'rgba(255,255,255,0.04)' : '#F7F9FC'}
+              >
+                <TxIcon icon={meta.icon} color={meta.color} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: tk.text }}>{meta.label}</div>
+                  <div style={{ fontSize: 10, color: '#8899AA', marginTop: 2 }}>
+                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {tx.reference && <span style={{ marginLeft: 6, opacity: 0.6 }}>{tx.reference.slice(0, 12)}…</span>}
+                  </div>
+                  {tx.reason && (
+                    <div style={{ fontSize: 10, color: meta.color, marginTop: 2, fontWeight: 600 }}>
+                      "{tx.reason}"
+                    </div>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: meta.credit ? '#10b981' : '#EF4444' }}>
+                    {sign}${amt.toFixed(2)}
+                  </div>
+                  <div style={{
+                    display: 'inline-block', marginTop: 4,
+                    fontSize: 9, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+                    background: statusBg(tx.status), color: statusColor(tx.status),
+                  }}>
+                    {tx.status?.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Detail modal */}
+      {selected && (
+        <div onClick={() => setSelected(null)} style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 2000,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: darkMode ? '#0D1B2E' : '#fff',
+            borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 500,
+            padding: '0 0 32px',
+            boxShadow: '0 -8px 40px rgba(0,0,0,0.2)',
+            animation: 'slideUp 0.25s ease',
+          }}>
+            <style>{`@keyframes slideUp{from{transform:translateY(60px);opacity:0}to{transform:translateY(0);opacity:1}}`}</style>
+            {/* Handle */}
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: '#CBD5E0', margin: '14px auto 0' }} />
+            {/* Header */}
+            {(() => {
+              const meta = getTxMeta(selected.type)
+              const amt  = parseFloat(selected.amount || 0)
+              return (
+                <>
+                  <div style={{
+                    margin: '16px 20px 20px',
+                    background: meta.credit
+                      ? 'linear-gradient(135deg,#001F54,#003B8E)'
+                      : 'linear-gradient(135deg,#1a0000,#3B0000)',
+                    borderRadius: 18, padding: '20px',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <TxIcon icon={meta.icon} color={meta.color} />
+                      <div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', fontWeight: 600 }}>{meta.label}</div>
+                        <div style={{ fontSize: 26, fontWeight: 900, color: meta.credit ? '#10b981' : '#FF6B6B', marginTop: 2 }}>
+                          {meta.credit ? '+' : '-'}${amt.toFixed(2)}
+                        </div>
+                      </div>
+                      <div style={{ marginLeft: 'auto' }}>
+                        <div style={{
+                          padding: '4px 12px', borderRadius: 20, fontSize: 10, fontWeight: 800,
+                          background: selected.status === 'completed' ? '#10b98120' : selected.status === 'rejected' ? '#EF444420' : '#F59E0B20',
+                          color: selected.status === 'completed' ? '#10b981' : selected.status === 'rejected' ? '#EF4444' : '#F59E0B',
+                        }}>
+                          {selected.status?.toUpperCase()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '0 20px' }}>
+                    {[
+                      ['Date', new Date(selected.created_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })],
+                      selected.reference && ['Reference', selected.reference],
+                      selected.bank_name && ['Bank', selected.bank_name],
+                      selected.account_name && ['Account Name', selected.account_name],
+                      selected.account_number && ['Account No.', selected.account_number],
+                      selected.network && ['Network', selected.network],
+                      selected.wallet_address && ['Wallet', selected.wallet_address.slice(0,20) + '…'],
+                      selected.currency && ['Currency', selected.currency],
+                      selected.rate_used && ['Rate Used', `1 USD = ₦${parseFloat(selected.rate_used).toFixed(2)}`],
+                      selected.reason && ['Admin Reason', selected.reason],
+                    ].filter(Boolean).map(([k, v]) => (
+                      <div key={k} style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                        padding: '11px 0', borderBottom: `1px solid ${tk.cardBorder}`,
+                      }}>
+                        <span style={{ fontSize: 12, color: '#8899AA', fontWeight: 600, flexShrink: 0, marginRight: 16 }}>{k}</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: tk.text, textAlign: 'right', wordBreak: 'break-all' }}>{v}</span>
+                      </div>
+                    ))}
+                    <button onClick={() => setSelected(null)} style={{
+                      marginTop: 20, width: '100%', padding: 14, borderRadius: 14,
+                      background: C.orange, border: 'none', color: '#fff',
+                      fontWeight: 800, fontSize: 14, cursor: 'pointer',
+                    }}>
+                      Close
+                    </button>
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack, initialTab }) {
   const tk = t(darkMode);
   const usdBalance = parseFloat(user?.usd_balance ?? user?.usdBalance ?? 0);
@@ -132,11 +328,13 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
   const [withdrawCurrency, setWithdrawCurrency] = useState('NGN');
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [showWithdrawCurrencyDrop, setShowWithdrawCurrencyDrop] = useState(false);
-  const [bankDetails, setBankDetails] = useState({ bankName: '', accountNumber: '', accountName: '' });
+  const [bankDetails, setBankDetails] = useState({ bankCode: '', bankName: '', accountNumber: '', accountName: '' });
   const [savedBanks, setSavedBanks] = useState([]);
-  const [useSavedBank, setUseSavedBank] = useState(null); // null = add new, index = saved
+  const [useSavedBank, setUseSavedBank] = useState(null);
   const [walletAddress, setWalletAddress] = useState('');
   const [network, setNetwork] = useState('TRC20');
+  const [banksList, setBanksList] = useState([]);
+  const [resolvingAccount, setResolvingAccount] = useState(false);
 
   // ── HISTORY ────────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState([]);
@@ -161,6 +359,33 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
     setModalAnimate(false);
     setTimeout(() => { setModal(null); }, 280);
   };
+
+  // ── LOAD BANKS FROM PAYSTACK ──────────────────────────────────────────
+  useEffect(() => {
+    fetch(`${API}/paystack/banks.php`)
+      .then(r => r.json())
+      .then(d => { if (d?.status && Array.isArray(d.data)) setBanksList(d.data); })
+      .catch(() => {});
+  }, []);
+
+  // ── AUTO-RESOLVE ACCOUNT NAME ─────────────────────────────────────────
+  useEffect(() => {
+    const accNum  = bankDetails.accountNumber;
+    const bankCode = bankDetails.bankCode;
+    if (accNum.length !== 10 || !bankCode) return;
+    setResolvingAccount(true);
+    fetch(`${API}/paystack/resolve_account.php?account_number=${accNum}&bank_code=${bankCode}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d?.status && d?.data?.account_name) {
+          setBankDetails(b => ({ ...b, accountName: d.data.account_name }));
+        } else {
+          setBankDetails(b => ({ ...b, accountName: '' }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setResolvingAccount(false));
+  }, [bankDetails.accountNumber, bankDetails.bankCode]);
 
   // ── BALANCE SYNC ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -279,6 +504,7 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
       if (!bd?.bankName || !bd?.accountNumber || !bd?.accountName) {
         showToast('Fill in all bank details', 'error'); return;
       }
+      if (bd.accountNumber.length !== 10) { showToast('Account number must be 10 digits', 'error'); return; }
     }
     openModal('withdraw');
   };
@@ -676,9 +902,19 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: '#8899AA', display: 'block', marginBottom: 6 }}>Select Bank</label>
                       <div style={{ position: 'relative' }}>
-                        <select value={bankDetails.bankName} onChange={e => setBankDetails(b => ({ ...b, bankName: e.target.value }))} style={sel}>
+                        <select
+                          value={bankDetails.bankCode}
+                          onChange={e => {
+                            const selected = banksList.find(b => b.code === e.target.value);
+                            setBankDetails(b => ({ ...b, bankCode: e.target.value, bankName: selected?.name || '', accountName: '' }));
+                          }}
+                          style={sel}
+                        >
                           <option value="">— Select Bank —</option>
-                          {NIGERIAN_BANKS.map(b => <option key={b} value={b}>{b}</option>)}
+                          {banksList.length > 0
+                            ? banksList.map(b => <option key={b.code} value={b.code}>{b.name}</option>)
+                            : NIGERIAN_BANKS.map(b => <option key={b} value={b}>{b}</option>)
+                          }
                         </select>
                         <ChevronDown size={14} style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: tk.text, opacity: 0.5 }} />
                       </div>
@@ -686,14 +922,19 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
                     <div style={{ marginBottom: 12 }}>
                       <label style={{ fontSize: 11, fontWeight: 600, color: '#8899AA', display: 'block', marginBottom: 6 }}>Account Number</label>
                       <input type="text" maxLength={10} value={bankDetails.accountNumber}
-                        onChange={e => setBankDetails(b => ({ ...b, accountNumber: e.target.value }))}
+                        onChange={e => setBankDetails(b => ({ ...b, accountNumber: e.target.value, accountName: '' }))}
                         placeholder="10-digit account number" style={inp} />
                     </div>
                     <div style={{ marginBottom: 16 }}>
-                      <label style={{ fontSize: 11, fontWeight: 600, color: '#8899AA', display: 'block', marginBottom: 6 }}>Account Name</label>
-                      <input type="text" value={bankDetails.accountName}
-                        onChange={e => setBankDetails(b => ({ ...b, accountName: e.target.value }))}
-                        placeholder="Account holder name" style={inp} />
+                      <label style={{ fontSize: 11, fontWeight: 600, color: '#8899AA', display: 'block', marginBottom: 6 }}>
+                        Account Name {resolvingAccount && <span style={{ color: C.orange, fontSize: 10 }}>  Verifying...</span>}
+                      </label>
+                      <input type="text" value={bankDetails.accountName} readOnly
+                        placeholder={resolvingAccount ? 'Fetching account name...' : 'Auto-filled after account number'}
+                        style={{ ...inp, opacity: 0.8, cursor: 'not-allowed', background: darkMode ? 'rgba(255,255,255,0.02)' : '#F0F2F5' }} />
+                      {bankDetails.accountName && (
+                        <div style={{ fontSize: 11, color: '#10b981', marginTop: 4, fontWeight: 600 }}>✓ Verified: {bankDetails.accountName}</div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -739,67 +980,13 @@ export default function Wallet({ user, updateUser, darkMode, setDarkMode, onBack
 
         {/* ── HISTORY TAB ── */}
         {activeTab === 'history' && (
-          <div style={{ background: tk.card, borderRadius: 24, padding: 24, border: `1px solid ${tk.cardBorder}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <span style={{ fontSize: 15, fontWeight: 800, color: tk.text }}>Transaction History</span>
-              <button onClick={loadHistory} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#8899AA' }}>
-                <RefreshCw size={15} />
-              </button>
-            </div>
-            {loadingHistory ? (
-              <div style={{ textAlign: 'center', padding: 40, color: '#8899AA' }}>Loading...</div>
-            ) : transactions.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <History size={36} color={tk.cardBorder} style={{ marginBottom: 12 }} />
-                <div style={{ fontSize: 14, fontWeight: 700, color: tk.text }}>No transactions yet</div>
-                <div style={{ fontSize: 12, color: '#8899AA', marginTop: 4 }}>Your deposits and withdrawals will appear here</div>
-              </div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {transactions.map((tx, i) => {
-                  const isCredit = ['deposit', 'admin_credit'].includes(tx.type);
-                  const typeLabel = {
-                    deposit: 'Deposit', withdrawal: 'Withdrawal',
-                    admin_credit: 'Admin Credit', admin_debit: 'Admin Debit',
-                  }[tx.type] || tx.type;
-                  const statusColor = tx.status === 'completed' ? '#10b981' : tx.status === 'rejected' ? '#EF4444' : '#F59E0B';
-                  return (
-                    <div key={i} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '14px 16px', borderRadius: 14,
-                      background: darkMode ? 'rgba(255,255,255,0.04)' : '#F7F8FC',
-                      border: `1px solid ${tk.cardBorder}`,
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                          width: 38, height: 38, borderRadius: '50%',
-                          background: isCredit ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.1)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          {isCredit
-                            ? <ArrowDownToLine size={16} color="#10b981" />
-                            : <ArrowUpFromLine size={16} color="#EF4444" />
-                          }
-                        </div>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: tk.text }}>{typeLabel}</div>
-                          <div style={{ fontSize: 10, color: '#8899AA' }}>{new Date(tx.created_at).toLocaleDateString()}</div>
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: isCredit ? '#10b981' : '#EF4444' }}>
-                          {isCredit ? '+' : '-'}${parseFloat(tx.amount).toFixed(2)}
-                        </div>
-                        <div style={{ fontSize: 10, fontWeight: 600, color: statusColor, marginTop: 2 }}>
-                          {tx.status?.charAt(0).toUpperCase() + tx.status?.slice(1)}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <HistoryTab
+            transactions={transactions}
+            loadingHistory={loadingHistory}
+            loadHistory={loadHistory}
+            darkMode={darkMode}
+            tk={tk}
+          />
         )}
       </div>
 

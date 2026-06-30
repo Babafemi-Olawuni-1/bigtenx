@@ -160,7 +160,10 @@ export default function Dashboard({ user: initialUser, onLogout }) {
           history: data.history || [],
           notifications: data.notifications || [],
           current_badge: data.current_badge || null,
-          current_multiplier: data.current_multiplier || 1.0
+          current_multiplier: data.current_multiplier || 1.0,
+          vip_active: data.vip_active || false,
+          vip_expires_at: data.vip_expires_at || null,
+          vip_auto_renew: data.vip_auto_renew || false,
         })
       }
     } catch (error) {
@@ -305,6 +308,7 @@ export default function Dashboard({ user: initialUser, onLogout }) {
         return (
           <UpgradePage
             user={user}
+            updateUser={updateUser}
             darkMode={darkMode}
             setDarkMode={setDarkMode}
             onClose={() => setActiveTab('home')}

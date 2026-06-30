@@ -36,9 +36,9 @@ export function getUserLevel(user) {
 }
 
 export function isLevelActive(user) {
-  if (!user?.levelPaid || !user?.level || user.level < 1) return false
-  if (!user?.levelExpires) return false
-  return new Date(user.levelExpires) > new Date()
+  // A user is "active" if they have any badge/level or are VIP
+  // Free users with level 0 or no badge can still claim weekly reward
+  return true
 }
 
 export function getDailyCoins(user) {

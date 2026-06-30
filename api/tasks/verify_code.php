@@ -175,7 +175,9 @@ if ($isVip) {
 
 /*
 |--------------------------------------------------------------------------
-| Reward calculation
+| Reward calculation — multiplier only applies when task has apply_multiplier=1
+| VIP = +20% boost on top of badge multiplier (badge × 1.2)
+| Multiplier does NOT affect signup bonus or weekly login reward
 |--------------------------------------------------------------------------
 */
 $baseReward = (float)$task['reward_xp'];
@@ -185,13 +187,14 @@ $applyMult  = (int)($task['apply_multiplier'] ?? 1);
 if ($rewardType === 'xp') {
     $badgeMultiplier = (float)($badgeData['highest_multiplier'] ?? 1.0);
     if ($badgeMultiplier <= 0) $badgeMultiplier = 1.0;
-    
+
+    // Only apply multiplier when task opts in
     $effectiveMultiplier = $applyMult ? $badgeMultiplier : 1.0;
-    $vipBoost = $isVip ? 1.2 : 1.0;
-    
+    // VIP boost: badge × 1.2 (applied on top of badge base)
+    $vipBoost    = ($isVip && $applyMult) ? 1.2 : 1.0;
     $finalReward = round($baseReward * $effectiveMultiplier * $vipBoost, 2);
 } else {
-    // Cash = exact decimal amount
+    // Cash rewards are always exact — no multiplier
     $finalReward = round($baseReward, 2);
 }
 

@@ -51,13 +51,14 @@ switch ($action) {
         $newBalance = $currentBalance + $amount;
         $db->prepare("UPDATE users SET usd_balance = ? WHERE id = ?")->execute([$newBalance, $userId]);
 
-        // Log transaction
+        // Log transaction with reason in notes
         try {
             $ref = 'ADMIN-CREDIT-' . strtoupper(substr(md5(uniqid()), 0, 8));
+            $notesJson = json_encode(['reason' => $reason]);
             $db->prepare("
-                INSERT INTO wallet_transactions (user_id, type, amount, status, reference, created_at)
-                VALUES (?, 'admin_credit', ?, 'completed', ?, NOW())
-            ")->execute([$userId, $amount, $ref]);
+                INSERT INTO wallet_transactions (user_id, type, amount, status, reference, notes, created_at)
+                VALUES (?, 'admin_credit', ?, 'completed', ?, ?, NOW())
+            ")->execute([$userId, $amount, $ref, $notesJson]);
         } catch (Exception $e) {}
 
         echo json_encode([
@@ -81,13 +82,14 @@ switch ($action) {
         $newBalance = $currentBalance - $amount;
         $db->prepare("UPDATE users SET usd_balance = ? WHERE id = ?")->execute([$newBalance, $userId]);
 
-        // Log transaction
+        // Log transaction with reason in notes
         try {
             $ref = 'ADMIN-DEBIT-' . strtoupper(substr(md5(uniqid()), 0, 8));
+            $notesJson = json_encode(['reason' => $reason]);
             $db->prepare("
-                INSERT INTO wallet_transactions (user_id, type, amount, status, reference, created_at)
-                VALUES (?, 'admin_debit', ?, 'completed', ?, NOW())
-            ")->execute([$userId, $amount, $ref]);
+                INSERT INTO wallet_transactions (user_id, type, amount, status, reference, notes, created_at)
+                VALUES (?, 'admin_debit', ?, 'completed', ?, ?, NOW())
+            ")->execute([$userId, $amount, $ref, $notesJson]);
         } catch (Exception $e) {}
 
         echo json_encode([

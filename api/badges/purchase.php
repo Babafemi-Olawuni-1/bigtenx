@@ -94,17 +94,7 @@ try {
         VALUES (?, ?)
     ")->execute([$userId, $badgeId]);
 
-    // Auto VIP for Diamond
-    if (strtolower($badge['name']) === 'diamond' && (int)$badge['vip_days'] > 0) {
-        $expires = date('Y-m-d H:i:s', strtotime("+{$badge['vip_days']} days"));
-
-        $db->prepare("
-            INSERT INTO user_vip (user_id, expires_at, active)
-            VALUES (?, ?, 1)
-            ON DUPLICATE KEY UPDATE
-            expires_at = ?, active = 1
-        ")->execute([$userId, $expires, $expires]);
-    }
+    // Diamond NO LONGER grants automatic VIP (Diamond = 2x multiplier only)
 
     // Transaction history
     $db->prepare("

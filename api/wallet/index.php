@@ -35,11 +35,17 @@ try {
     // VIP status
     $vipActive    = false;
     $vipExpiresAt = null;
+    $vipAutoRenew = false;
     try {
-        $vs = $db->prepare("SELECT expires_at FROM user_vip WHERE user_id = ? AND active = 1 AND expires_at > NOW() LIMIT 1");
+        $vs = $db->prepare("SELECT expires_at, COALESCE(auto_renew,0) AS auto_renew FROM user_vip WHERE user_id = ? AND active = 1 AND expires_at > NOW() LIMIT 1");
         $vs->execute([$user_id]);
         $vip = $vs->fetch(PDO::FETCH_ASSOC);
-        if ($vip) { $vipActive = true; $vipExpiresAt = $vip['expires_at']; $currentMultiplier = round($currentMultiplier * 1.2, 2); }
+        if ($vip) {
+            $vipActive      = true;
+            $vipExpiresAt   = $vip['expires_at'];
+            $vipAutoRenew   = (bool)$vip['auto_renew'];
+            $currentMultiplier = round($currentMultiplier * 1.2, 2);
+        }
     } catch (Exception $e) {}
 
     echo json_encode([
@@ -61,6 +67,7 @@ try {
         "current_multiplier" => $currentMultiplier,
         "vip_active"         => $vipActive,
         "vip_expires_at"     => $vipExpiresAt,
+        "vip_auto_renew"     => $vipAutoRenew,
     ]);
 } catch (Exception $e) {
     echo json_encode(["success" => false, "message" => $e->getMessage()]);

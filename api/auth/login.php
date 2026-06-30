@@ -105,6 +105,18 @@ try {
     $user['is_vip']               = (int)$user['is_vip'];
     $user['streak']               = (int)($user['streak'] ?? 0);
 
+    // ── Weekly streak data ────────────────────────────────────────────
+    try {
+        $ws = $db->prepare("SELECT weekly_claimed_days, weekly_start FROM users WHERE id = ?");
+        $ws->execute([$user['id']]);
+        $wrow = $ws->fetch(PDO::FETCH_ASSOC);
+        $user['weekly_claimed_days'] = $wrow['weekly_claimed_days'] ?? '';
+        $user['weekly_start']        = $wrow['weekly_start'] ?? '';
+    } catch (Exception $e) {
+        $user['weekly_claimed_days'] = '';
+        $user['weekly_start']        = '';
+    }
+
     // ── Safely fetch optional columns that may not exist yet ──────
     // total_referrals — derive from referred_by count if column missing
     try {
@@ -167,18 +179,24 @@ try {
     $user['current_multiplier'] = $current_multiplier;
 
     // ── VIP active check ─────────────────────────────────────────
-    $vip_active = false;
+    $vip_active     = false;
+    $vip_expires_at = null;
     try {
         $vs = $db->prepare("
-            SELECT id FROM user_vip
+            SELECT expires_at FROM user_vip
             WHERE user_id = ? AND active = 1 AND expires_at > NOW()
             LIMIT 1
         ");
         $vs->execute([$user['id']]);
-        $vip_active = (bool)$vs->fetch();
+        $vrow = $vs->fetch(PDO::FETCH_ASSOC);
+        if ($vrow) {
+            $vip_active     = true;
+            $vip_expires_at = $vrow['expires_at'];
+        }
     } catch (Exception $e) { /* user_vip table may not exist */ }
 
-    $user['vip_active'] = $vip_active ? 1 : 0;
+    $user['vip_active']     = $vip_active ? 1 : 0;
+    $user['vip_expires_at'] = $vip_expires_at;
 
     echo json_encode([
         'success' => true,

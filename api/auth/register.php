@@ -92,36 +92,20 @@ Priority:
 */
 
 if (!empty($referralCode)) {
-    $stmt = $db->prepare("
-        SELECT id
-        FROM users
-        WHERE referral_code = ?
-        LIMIT 1
-    ");
+    $stmt = $db->prepare("SELECT id FROM users WHERE referral_code = ? LIMIT 1");
     $stmt->execute([$referralCode]);
-
     $referrer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($referrer) {
-        $referrerId = (int)$referrer['id'];
-    }
+    if ($referrer) $referrerId = (int)$referrer['id'];
 }
 
 if (!$referrerId && !empty($refUsername)) {
-    $stmt = $db->prepare("
-        SELECT id
-        FROM users
-        WHERE username = ?
-        LIMIT 1
-    ");
+    $stmt = $db->prepare("SELECT id FROM users WHERE username = ? LIMIT 1");
     $stmt->execute([$refUsername]);
-
     $referrer = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($referrer) {
-        $referrerId = (int)$referrer['id'];
-    }
+    if ($referrer) $referrerId = (int)$referrer['id'];
 }
+// Self-referral is not possible yet (user doesn't exist), but block same-email referrer
+// Circular referral guard happens in add_referrer.php for post-registration assignment
 
 /*
 |--------------------------------------------------------------------------

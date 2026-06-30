@@ -1,4 +1,8 @@
-node_modules
-dist
+node_modules/
+dist/
 .env
-.vscode
+.env.local
+.vscode/
+config/paystack.php
+api/config/db.php
+*.zip
