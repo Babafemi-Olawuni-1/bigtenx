@@ -57,9 +57,8 @@ function BadgeIcon({ name, size = 44 }) {
   return <MedalIcon color={getBadgeColor(n)} size={size} />
 }
 
-export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUpgrade, updateUser }) {
+export default function UpgradePage({ user, darkMode, setDarkMode, onClose, onUpgrade }) {
   const tk = t(darkMode)
-  const usdBalance = parseFloat(user?.usd_balance ?? user?.usdBalance ?? 0)
 
   const [toast, setToast]           = useState(null)
   const [badges, setBadges]         = useState([])

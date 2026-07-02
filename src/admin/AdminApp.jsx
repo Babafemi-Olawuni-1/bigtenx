@@ -5,6 +5,8 @@ import AdminLayout from './AdminLayout'
 import AdminLogin from './AdminLogin'
 import AdminDashboard from './AdminDashboard'
 import Users from './Users'
+import AdminVault from './AdminVault'
+import AdminXP from './AdminXP'
 import Vault from './Vault'
 import XPLevels from './XPLevels'
 import Referral from './Referral'
@@ -154,8 +156,10 @@ export default function AdminApp() {
         <Route path="/" element={<Navigate to="/admin/dashboard" />} />
         <Route path="/admin/dashboard" element={<AdminDashboard token={token} />} />
         <Route path="/admin/users" element={<Users token={token} />} />
-        <Route path="/admin/vault" element={<Vault token={token} />} />
-        <Route path="/admin/xp-levels" element={<XPLevels token={token} />} />
+        <Route path="/admin/vault"      element={<AdminVault token={token} />} />
+        <Route path="/admin/vault-legacy" element={<Vault token={token} />} />
+        <Route path="/admin/xp-levels"  element={<XPLevels token={token} />} />
+        <Route path="/admin/xp-pool"    element={<AdminXP token={token} />} />
         <Route path="/admin/referral" element={<Referral token={token} />} />
         <Route path="/admin/marketplace" element={<Marketplace token={token} />} />
         <Route path="/admin/contests" element={<Contests token={token} />} />

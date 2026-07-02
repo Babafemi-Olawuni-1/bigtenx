@@ -1,9 +1,10 @@
-// StreakBar.jsx — compact, all info visible, orange gradient, no scroll
+// StreakBar.jsx — compact single-row, no emojis, Lucide icons only
 import { useState } from 'react'
+import { Gift } from 'lucide-react'
 import { C } from './tokens'
 import { API } from '../auth/api'
 
-const DAY_LABELS = ['SUN','MON','TUE','WED','THU','FRI','SAT']
+const DAY_LABELS = ['S','M','T','W','T','F','S']
 const DAILY_XP   = 3
 const BONUS_XP   = 4
 
@@ -52,8 +53,9 @@ export default function StreakBar({ user, updateUser }) {
           weekly_claimed_days: data.claimed_days,
           weekly_start:        currentStart,
           streak:              data.streak_count ?? (user?.streak ?? 0),
+          today_earnings:      (user?.today_earnings ?? 0) + data.coins_earned,
         })
-        const bonus = data.week_complete ? ` +${BONUS_XP} bonus!` : ''
+        const bonus = data.week_complete ? ` + ${BONUS_XP} bonus!` : ''
         showToast(`+${data.coins_earned} XP${bonus}`)
       } else {
         showToast(data?.message || 'Could not claim')
@@ -69,122 +71,82 @@ export default function StreakBar({ user, updateUser }) {
     <>
       <div style={{
         margin: '0 16px 13px',
-        borderRadius: 20,
+        borderRadius: 16,
         background: `linear-gradient(135deg, ${C.orange} 0%, #E65C00 100%)`,
-        padding: '14px 16px',
-        boxShadow: `0 6px 20px ${C.orange}44`,
+        padding: '10px 14px',
+        boxShadow: `0 4px 14px ${C.orange}44`,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
       }}>
-
-        {/* ── Row 1: Title + Claim button ── */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 18 }}>🎁</span>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>
-                Weekly Login Reward
-              </div>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', marginTop: 1 }}>
-                {claimedDays.length}/7 days claimed
-              </div>
-            </div>
-          </div>
-
-          <button
-            onClick={handleClaim}
-            disabled={alreadyClaimed || allClaimed || loading}
-            style={{
-              background:   alreadyClaimed || allClaimed ? 'rgba(255,255,255,0.25)' : '#fff',
-              color:        alreadyClaimed || allClaimed ? 'rgba(255,255,255,0.75)' : C.orange,
-              border:       'none', borderRadius: 12,
-              padding:      '8px 14px',
-              fontSize:     12, fontWeight: 800,
-              cursor:       alreadyClaimed || allClaimed || loading ? 'default' : 'pointer',
-              fontFamily:   'inherit',
-              whiteSpace:   'nowrap',
-              boxShadow:    alreadyClaimed || allClaimed ? 'none' : '0 2px 10px rgba(0,0,0,0.18)',
-              flexShrink:   0,
-            }}
-          >
-            {loading ? '…' : allClaimed ? '🎉 All Done!' : alreadyClaimed ? '✓ Claimed' : `Claim ${xpThisClaim} XP`}
-          </button>
+        {/* Label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+          <Gift size={13} color="#fff" />
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>Weekly</span>
         </div>
 
-        {/* ── Row 2: Day dots + bonus — no scroll, all fit ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
+        {/* Day circles */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
           {DAY_LABELS.map((label, i) => {
             const claimed = claimedDays.includes(i)
             const isToday = i === today && !claimed
             return (
-              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                {/* Circle */}
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
                 <div style={{
-                  width:      28, height: 28, borderRadius: '50%',
-                  background: claimed ? '#fff' : 'rgba(255,255,255,0.18)',
-                  border:     isToday
-                    ? '2px solid #fff'
-                    : '1.5px solid rgba(255,255,255,0.45)',
-                  display:    'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize:   13, fontWeight: 900,
-                  color:      claimed ? C.orange : 'rgba(255,255,255,0.55)',
-                  boxShadow:  isToday ? '0 0 0 3px rgba(255,255,255,0.25)' : 'none',
-                }}>
-                  {claimed ? '✓' : ''}
-                </div>
-                {/* Day label */}
-                <span style={{
-                  fontSize: 8, fontWeight: 700,
-                  color: 'rgba(255,255,255,0.8)',
-                  letterSpacing: '0.03em',
-                }}>
+                  width: 20, height: 20, borderRadius: '50%',
+                  background:  claimed ? '#fff' : 'rgba(255,255,255,0.2)',
+                  border:      isToday  ? '2px solid #fff' : '1.5px solid rgba(255,255,255,0.45)',
+                  boxShadow:   isToday  ? '0 0 0 3px rgba(255,255,255,0.2)' : 'none',
+                  flexShrink:  0,
+                }} />
+                <span style={{ fontSize: 7.5, fontWeight: 700, color: 'rgba(255,255,255,0.8)', lineHeight: 1 }}>
                   {label}
-                </span>
-                {/* XP label */}
-                <span style={{
-                  fontSize: 8, fontWeight: 600,
-                  color: claimed ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)',
-                }}>
-                  {DAILY_XP}XP
                 </span>
               </div>
             )
           })}
 
-          {/* Divider */}
-          <div style={{ width: 1, height: 36, background: 'rgba(255,255,255,0.3)', margin: '0 6px', alignSelf: 'center' }} />
-
-          {/* Weekly bonus column */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 36 }}>
+          {/* Bonus icon */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             <div style={{
-              width: 28, height: 28, borderRadius: '50%',
+              width: 20, height: 20, borderRadius: '50%',
               background: allClaimed ? '#fff' : 'rgba(255,255,255,0.15)',
               border: '1.5px solid rgba(255,255,255,0.45)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 13,
             }}>
-              🎁
+              <Gift size={10} color={allClaimed ? C.orange : 'rgba(255,255,255,0.6)'} />
             </div>
-            <span style={{ fontSize: 7, fontWeight: 800, color: 'rgba(255,255,255,0.85)', textAlign: 'center', lineHeight: 1.3 }}>
-              BONUS
-            </span>
-            <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.9)' }}>
+            <span style={{ fontSize: 7, fontWeight: 800, color: 'rgba(255,255,255,0.85)', lineHeight: 1 }}>
               +{BONUS_XP}XP
             </span>
           </div>
         </div>
 
-        {/* ── Row 3: footer note ── */}
-        <div style={{
-          marginTop: 10, paddingTop: 9,
-          borderTop: '1px solid rgba(255,255,255,0.2)',
-          fontSize: 10, color: 'rgba(255,255,255,0.75)',
-          display: 'flex', alignItems: 'center', gap: 5,
-        }}>
-          <span>ⓘ</span>
-          <span>Miss a day and it's gone — claim before midnight each day</span>
+        {/* Count + button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.85)', whiteSpace: 'nowrap' }}>
+            {claimedDays.length}/7
+          </span>
+          <button
+            onClick={handleClaim}
+            disabled={alreadyClaimed || allClaimed || loading}
+            style={{
+              background:  alreadyClaimed || allClaimed ? 'rgba(255,255,255,0.25)' : '#fff',
+              color:       alreadyClaimed || allClaimed ? 'rgba(255,255,255,0.7)' : C.orange,
+              border:      'none', borderRadius: 10,
+              padding:     '6px 12px',
+              fontSize:    11, fontWeight: 800,
+              cursor:      alreadyClaimed || allClaimed || loading ? 'default' : 'pointer',
+              fontFamily:  'inherit',
+              whiteSpace:  'nowrap',
+              boxShadow:   alreadyClaimed || allClaimed ? 'none' : '0 2px 8px rgba(0,0,0,0.15)',
+            }}
+          >
+            {loading ? '…' : allClaimed ? 'Done' : alreadyClaimed ? 'Claimed' : `Claim ${xpThisClaim} XP`}
+          </button>
         </div>
       </div>
 
-      {/* Toast */}
       {toast && (
         <div style={{
           position: 'fixed', bottom: 90, left: '50%', transform: 'translateX(-50%)',

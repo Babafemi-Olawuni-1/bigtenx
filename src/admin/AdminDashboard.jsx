@@ -117,10 +117,11 @@ export default function AdminDashboard({ token }) {
       { icon: Trophy, label: 'Contests', description: 'Competitions & events', badge: 'NEW', badgeColor: '#10b981', path: '/admin/contests' },
     ]},
     { title: 'Economy', items: [
-      { icon: TrendingUp, label: 'XP & Levels', description: 'Point system & tiers', path: '/admin/xp-levels' },
+      { icon: TrendingUp, label: 'XP & Levels', description: 'Badge multipliers & rewards', path: '/admin/xp-levels' },
+      { icon: Zap, label: 'XP Pool', description: 'Contributions & distributions', path: '/admin/xp-pool' },
       { icon: Share2, label: 'Referrals', description: 'Referral links & rewards', path: '/admin/referral' },
       { icon: Crown, label: 'Badges & VIP', description: 'Tiers, perks & status', path: '/admin/xp-levels' },
-      { icon: PiggyBank, label: 'Vault', description: 'Savings & interest', path: '/admin/vault' },
+      { icon: PiggyBank, label: 'Vault', description: 'Vault units & pool', path: '/admin/vault' },
     ]},
     { title: 'Commerce', items: [
       { icon: Store, label: 'Marketplace', description: 'Products & listings', badge: 'NEW', badgeColor: '#10b981', path: '/admin/marketplace' },
