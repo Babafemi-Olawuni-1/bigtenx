@@ -1,9 +1,70 @@
 // AdminXP.jsx — Phase 4: single-page XP pool admin control
 import { useState, useEffect, useCallback } from 'react'
 import { API, O } from './adminUtils'
-import { Search, Plus, Minus, Save, RefreshCw, Users, Zap, Calendar, Lock } from 'lucide-react'
+import { Search, Plus, Minus, Save, RefreshCw, Users, Zap, Calendar, Lock, History } from 'lucide-react'
 
 const inp = { width: '100%', padding: '11px 14px', borderRadius: 12, border: '1px solid #E9EDF2', fontSize: 13, fontFamily: 'inherit', background: '#F7F8FC', outline: 'none', boxSizing: 'border-box' }
+
+function DistributionHistory({ headers }) {
+  const [rows, setRows]       = useState([])
+  const [loading, setLoading] = useState(false)
+  const [loaded, setLoaded]   = useState(false)
+
+  const load = async () => {
+    setLoading(true)
+    try {
+      const res  = await fetch(`${API}/admin/distribution_history.php`, { headers })
+      const data = await res.json()
+      if (data.success) setRows(data.distributions || [])
+    } catch {}
+    finally { setLoading(false); setLoaded(true) }
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 20, padding: 20, border: '1px solid #E9EDF2', marginTop: 16 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ fontWeight: 800, fontSize: 14, color: '#001F54', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <History size={16} color={O} /> Distribution History
+        </div>
+        <button onClick={load} disabled={loading} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: O, fontWeight: 700 }}>
+          {loading ? '...' : loaded ? 'Refresh' : 'Load'}
+        </button>
+      </div>
+      {!loaded ? (
+        <div style={{ textAlign: 'center', padding: 20, color: '#8899AA', fontSize: 12 }}>Click Load to view history</div>
+      ) : loading ? (
+        <div style={{ textAlign: 'center', padding: 20, color: '#8899AA', fontSize: 12 }}>Loading...</div>
+      ) : rows.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 20, color: '#8899AA', fontSize: 12 }}>No distributions recorded yet</div>
+      ) : (
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #E9EDF2' }}>
+                {['Cycle','Pool','Users Paid','Per User (avg)','Date'].map(h => (
+                  <th key={h} style={{ padding: '8px 10px', textAlign: 'left', color: '#8899AA', fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} style={{ borderBottom: '1px solid #F0F2F5' }}>
+                  <td style={{ padding: '10px', fontWeight: 700, color: '#001F54' }}>{r.cycle}</td>
+                  <td style={{ padding: '10px', color: '#10b981', fontWeight: 700 }}>${parseFloat(r.pool_amount||0).toFixed(2)}</td>
+                  <td style={{ padding: '10px', color: '#001F54' }}>{r.users_paid}</td>
+                  <td style={{ padding: '10px', color: O, fontWeight: 600 }}>
+                    {r.users_paid > 0 ? `$${(parseFloat(r.pool_amount||0)/r.users_paid).toFixed(4)}` : '—'}
+                  </td>
+                  <td style={{ padding: '10px', color: '#8899AA' }}>{r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function AdminXP({ token }) {
   const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token }
@@ -236,6 +297,9 @@ export default function AdminXP({ token }) {
               <Save size={15} /> {savingSettings ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
+
+          {/* Distribution History */}
+          <DistributionHistory headers={headers} />
         </>
       )}
     </div>

@@ -141,6 +141,10 @@ export default function Dashboard({ user: initialUser, onLogout }) {
       updateUser(initialUser)
     }
     setLoading(false)
+    // Refresh balance when tab becomes visible again (catches admin-side changes)
+    const onFocus = () => { if (user?.id) refreshUser() }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [])
 
   const refreshUser = async () => {

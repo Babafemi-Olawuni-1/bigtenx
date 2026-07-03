@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault Units</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card-bg: #ffffff;
+    --card-bg-2: #ffffff;
+    --tile-bg: #f1f2f5;
+    --border: #e6e8ec;
+    --text-primary: #14161a;
+    --text-secondary: #6b7280;
+    --orange: #f7931e;
+    --orange-dark: #e5820a;
+    --green: #16a34a;
+    --green-bg: rgba(22,163,74,0.12);
+    --red: #ef4444;
+    --red-bg: rgba(239,68,68,0.08);
+    --red-border: rgba(239,68,68,0.35);
+    --shadow: 0 1px 3px rgba(20,22,26,0.06), 0 1px 2px rgba(20,22,26,0.04);
+    --overlay: rgba(20,22,26,0.4);
+    --pill-bg: #fff3e2;
+    --divider: #edeef1;
+    --purple: #7c3aed;
+    --purple-bg: rgba(124,58,237,0.06);
+    --owned-bg: rgba(22,163,74,0.12);
+    --owned-text: #16a34a;
+    --icon-circle: #eef0f4;
+    --header-border: #e6e8ec;
+  }
+
+  [data-theme="dark"] {
+    --bg: #0a0d14;
+    --card-bg: #131722;
+    --card-bg-2: #0e121a;
+    --tile-bg: #1a1f2c;
+    --border: #232838;
+    --text-primary: #f5f6f8;
+    --text-secondary: #8b93a7;
+    --orange: #f7931e;
+    --orange-dark: #e5820a;
+    --green: #22c55e;
+    --green-bg: rgba(34,197,94,0.12);
+    --red: #f0575c;
+    --red-bg: rgba(240,87,92,0.08);
+    --red-border: rgba(240,87,92,0.4);
+    --shadow: none;
+    --overlay: rgba(0,0,0,0.6);
+    --pill-bg: rgba(247,147,30,0.12);
+    --divider: #1d212d;
+    --purple: #8b5cf6;
+    --purple-bg: rgba(139,92,246,0.06);
+    --owned-bg: rgba(34,197,94,0.14);
+    --owned-text: #4ade80;
+    --icon-circle: #1a1f2c;
+    --header-border: #1a1f2c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    transition: background 0.25s ease, color 0.25s ease;
+    padding-bottom: 60px;
+  }
+
+  .page {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px 40px;
+  }
+
+  /* Theme toggle */
+  .theme-toggle-wrap {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    box-shadow: var(--shadow);
+  }
+  .theme-toggle svg { width: 16px; height: 16px; }
+
+  /* Card */
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--orange);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .card-header svg { width: 18px; height: 18px; }
+
+  .tile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .tile {
+    background: var(--tile-bg);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .tile-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+  }
+  .tile-value {
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .tile-value.orange { color: var(--orange); }
+
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px 12px;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.08s ease, filter 0.15s ease;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn svg { width: 20px; height: 20px; }
+
+  .btn-buy {
+    background: var(--orange);
+    color: #1a1206;
+  }
+  [data-theme="dark"] .btn-buy { color: #1a1206; }
+  .btn-buy:hover { filter: brightness(1.05); }
+
+  .btn-sell {
+    background: var(--red-bg);
+    color: var(--red);
+    border: 1.5px solid var(--red-border);
+  }
+  .btn-sell:hover { filter: brightness(1.05); }
+
+  .fee-note {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Total vault value card */
+  .value-card {
+    background: var(--card-bg-2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .value-top-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .value-label {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 10px;
+  }
+  .value-amount {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .value-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+  }
+  .change-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--green-bg);
+    color: var(--green);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .share-pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--pill-bg);
+    color: var(--orange);
+    font-weight: 700;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* Transaction history */
+  .history-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+  }
+  .history-title {
+    font-size: 17px;
+    font-weight: 800;
+    margin-bottom: 18px;
+  }
+  table.history-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .history-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--divider);
+  }
+  .history-table th:not(:first-child), .history-table td:not(:first-child) {
+    text-align: right;
+  }
+  .history-table td {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--divider);
+    font-size: 15px;
+    vertical-align: middle;
+  }
+  .history-table tr:last-child td { border-bottom: none; }
+
+  .type-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+  }
+  .type-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .type-icon.buy { background: var(--pill-bg); color: var(--orange); }
+  .type-icon.sell { background: var(--green-bg); color: var(--green); }
+  .type-icon svg { width: 16px; height: 16px; }
+
+  .mono { font-variant-numeric: tabular-nums; }
+  .fee-val { color: var(--text-secondary); }
+  .amount-pos { color: var(--green); font-weight: 700; }
+  .amount-neg { color: var(--orange); font-weight: 700; }
+  .date-val { color: var(--text-secondary); font-size: 13px; }
+
+  .section-gap { height: 8px; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.active { display: flex; }
+
+  .modal {
+    background: var(--card-bg);
+    width: 100%;
+    max-width: 480px;
+    border-radius: 24px 24px 0 0;
+    padding: 24px 22px 28px;
+    box-shadow: var(--shadow);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 999px;
+    margin: 0 auto 18px;
+  }
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .modal-title {
+    font-size: 21px;
+    font-weight: 800;
+  }
+  .modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+    padding: 4px;
+  }
+
+  .my-units-box {
+    background: var(--tile-bg);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    color: var(--text-secondary);
+    font-size: 16px;
+  }
+  .my-units-box strong {
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 34px;
+    margin-bottom: 24px;
+  }
+  .stepper-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--tile-bg);
+    border: none;
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stepper-btn:active { transform: scale(0.94); }
+  .stepper-value {
+    font-size: 34px;
+    font-weight: 800;
+    min-width: 40px;
+    text-align: center;
+  }
+
+  .modal-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--divider);
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+  .modal-row .right { color: var(--text-primary); font-weight: 600; }
+  .fee-inline-buy { color: var(--orange); }
+  .fee-inline-sell { color: var(--red); }
+
+  .modal-row.total {
+    border-bottom: none;
+    padding-top: 18px;
+    font-size: 17px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+  .modal-row.total .right.buy-total { color: var(--orange); font-size: 22px; }
+  .modal-row.total .right.sell-total { color: var(--green); font-size: 22px; }
+
+  .wallet-box {
+    background: var(--tile-bg);
+    border-radius: 14px;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 18px 0 20px;
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+  .wallet-box strong { color: var(--text-primary); font-weight: 700; }
+
+  .confirm-btn {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 17px;
+    font-size: 17px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .confirm-buy { background: var(--orange); color: #1a1206; }
+  .confirm-sell { background: var(--red); color: #fff; }
+  .confirm-btn:active { transform: scale(0.99); }
+
+  /* Page switcher (demo nav, not part of either design) */
+  .page-switcher {
+    max-width: 480px;
+    margin: 0 auto;
+    display: flex;
+    gap: 8px;
+    padding: 14px 16px 0;
+  }
+  .page-switcher button {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card-bg);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .page-switcher button.active {
+    background: var(--orange);
+    color: #1a1206;
+    border-color: var(--orange);
+  }
+
+  .app-page { display: none; }
+  .app-page.active { display: block; }
+
+  /* ---- Upgrade Level page ---- */
+  .upgrade-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 16px 20px;
+    border-bottom: 1px solid var(--header-border);
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  .icon-circle-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--icon-circle);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-primary);
+    flex-shrink: 0;
+  }
+  .icon-circle-btn svg { width: 20px; height: 20px; }
+
+  .upgrade-title-wrap { text-align: center; flex: 1; }
+  .upgrade-title {
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .upgrade-subtitle {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .upgrade-page-inner {
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 22px 16px 40px;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+
+  .tier-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 26px 16px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .tier-emoji {
+    font-size: 40px;
+    line-height: 1;
+    margin-bottom: 14px;
+  }
+  .tier-name {
+    font-size: 19px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .tier-price {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .vip-card {
+    grid-column: 1 / -1;
+    background: var(--purple-bg);
+    border: 2px solid var(--purple);
+    border-radius: 18px;
+    padding: 24px 22px;
+    text-align: left;
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+  }
+  .vip-left {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+  }
+  .owned-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: var(--owned-bg);
+    color: var(--owned-text);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .vip-card .tier-emoji { text-align: left; margin-bottom: 10px; }
+  .vip-card .tier-name, .vip-card .tier-price { color: var(--purple); }
+  .vip-card .tier-price { font-size: 16px; }
+
+  .vip-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  .vip-right {
+    flex: 1.15;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .auto-renew-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .toggle-switch {
+    width: 46px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--purple);
+    position: relative;
+    cursor: pointer;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+  }
+  .toggle-switch .knob {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  }
+  .toggle-switch.off {
+    background: var(--tile-bg);
+    border: 1px solid var(--border);
+  }
+  .toggle-switch.off .knob {
+    transform: translateX(20px);
+    background: var(--card-bg);
+  }
+  .toggle-switch:not(.off) .knob {
+    transform: translateX(20px);
+  }
+
+  .renewal-box {
+    background: var(--tile-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .renewal-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--purple-bg);
+    border: 1px solid var(--purple);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--purple);
+  }
+  .renewal-icon svg { width: 17px; height: 17px; }
+  .renewal-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+  }
+  .renewal-date {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--purple);
+  }
+
+  .benefits-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .benefits-title {
+    color: var(--orange);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+    margin-bottom: 16px;
+  }
+  .benefit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    padding: 8px 0;
+    color: var(--text-primary);
+  }
+  .benefit-row svg {
+    width: 18px;
+    height: 18px;
+    color: var(--green);
+    flex-shrink: 0;
+  }
+
+  .owned-banner {
+    background: var(--owned-bg);
+    border: 1px solid var(--owned-text);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--owned-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  @media (max-width: 380px) {
+    .vip-card { flex-direction: column; }
+    .vip-divider { width: 100%; height: 1px; }
+  }
+
+</style>
+</head>
+<body>
+
+<div class="page-switcher">
+  <button id="navVault" class="active">Vault Units</button>
+  <button id="navUpgrade">Upgrade Level</button>
+</div>
+
+<div class="theme-toggle-wrap" style="max-width:480px; margin:0 auto; padding:0 16px;">
+  <button class="theme-toggle" id="themeToggle">
+    <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+    <span id="themeLabel">Dark</span>
+  </button>
+</div>
+
+<div class="page app-page active" id="vaultPage">
+
+  <!-- Vault Units Card -->
+  <div class="card">
+    <div class="card-header">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+      VAULT UNITS
+    </div>
+
+    <div class="tile-grid">
+      <div class="tile">
+        <div class="tile-label">MY UNITS</div>
+        <div class="tile-value orange" id="myUnits">6</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">ECOSYSTEM UNITS</div>
+        <div class="tile-value" id="ecoUnits">12</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">UNIT PRICE</div>
+        <div class="tile-value orange" id="unitPrice">$19.23</div>
+      </div>
+      <div class="tile">
+        <div class="tile-label">VAULT STATUS</div>
+        <div class="tile-value">Unlimited</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-buy" id="openBuy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        Buy Units
+      </button>
+      <button class="btn btn-sell" id="openSell">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+        Sell Units
+      </button>
+    </div>
+
+    <div class="fee-note">2% fee applies on all transactions</div>
+  </div>
+
+  <!-- Total Vault Value Card -->
+  <div class="value-card">
+    <div class="value-label">TOTAL VAULT VALUE</div>
+    <div class="value-top-row">
+      <div>
+        <div class="value-amount" id="totalValue">$230.74</div>
+        <div class="value-sub" id="unitsSub">25 of 29 total units</div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+        <span class="change-pill">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><polygon points="12,4 20,18 4,18"/></svg>
+          <span id="changeVal">108.34 (88.51%) 24h</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction History -->
+  <div class="history-card">
+    <div class="history-title">Transaction History</div>
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Units</th>
+          <th>Price</th>
+          <th>Fee</th>
+          <th>Amount</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody id="historyBody">
+        <tr>
+          <td>
+            <div class="type-cell">
+              <span class="type-icon buy">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
+              </span>
+              BUY
+            </div>
+          </td>
+          <td class="mono">100</td>
+          <td class="mono">$18.87</td>
+          <td class="mono fee-val">$37.74</td>
+          <td class="mono amount-neg">-$1,887.04</td>
+          <td class="date-val">Jul 2, 26 21:29</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="type-cell">
+              <span class="type-icon sell">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"></line><polyline points="17 17 7 17 7 7"></polyline></svg>
+              </span>
+              SELL
+            </div>
+          </td>
+          <td class="mono">19</td>
+          <td class="mono">$18.18</td>
+          <td class="mono fee-val">$6.91</td>
+          <td class="mono amount-pos">+$338.50</td>
+          <td class="date-val">Jul 2, 26 21:24</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="type-cell">
+              <span class="type-icon sell">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="17" y1="7" x2="7" y2="17"></line><polyline points="17 17 7 17 7 7"></polyline></svg>
+              </span>
+              SELL
+            </div>
+          </td>
+          <td class="mono">100</td>
+          <td class="mono">$17.01</td>
+          <td class="mono fee-val">$34.01</td>
+          <td class="mono amount-pos">+$1,666.65</td>
+          <td class="date-val">Jul 2, 26 21:24</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Upgrade Level Page -->
+<div class="app-page" id="upgradePage">
+
+  <div class="upgrade-header">
+    <button class="icon-circle-btn" id="upgradeBack" aria-label="Back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div class="upgrade-title-wrap">
+      <div class="upgrade-title">Upgrade Level</div>
+      <div class="upgrade-subtitle">Unlock daily tasks &amp; earnings</div>
+    </div>
+    <button class="icon-circle-btn" id="upgradeThemeToggle" aria-label="Toggle theme">
+      <svg id="upgradeThemeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></svg>
+    </button>
+  </div>
+
+  <div class="upgrade-page-inner">
+
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-emoji">🥉</div>
+        <div class="tier-name">Bronze</div>
+        <div class="tier-price">$1</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-emoji">🥈</div>
+        <div class="tier-name">Silver</div>
+        <div class="tier-price">$5</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-emoji">🥇</div>
+        <div class="tier-name">Gold</div>
+        <div class="tier-price">$10</div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-emoji">💎</div>
+        <div class="tier-name">Diamond</div>
+        <div class="tier-price">$20</div>
+      </div>
+    </div>
+
+    <div class="vip-card">
+      <div class="vip-left">
+        <span class="owned-badge">ACTIVE</span>
+        <div class="tier-emoji">👑</div>
+        <div class="tier-name">VIP</div>
+        <div class="tier-price">$10 / m</div>
+      </div>
+      <div class="vip-divider"></div>
+      <div class="vip-right">
+        <div class="auto-renew-row">
+          <span>Auto renew</span>
+          <button class="toggle-switch" id="autoRenewToggle" aria-label="Toggle auto renew">
+            <span class="knob"></span>
+          </button>
+        </div>
+        <div class="renewal-box">
+          <span class="renewal-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15.5 14"></polyline></svg>
+          </span>
+          <div>
+            <div class="renewal-label">Next renewal</div>
+            <div class="renewal-date">May 26, 2025</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="benefits-card">
+      <div class="benefits-title">VIP BENEFITS</div>
+      <div class="benefit-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        20% XP speed boost
+      </div>
+      <div class="benefit-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        VIP badge status
+      </div>
+      <div class="benefit-row">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        $1 sponsor VIP reward
+      </div>
+    </div>
+
+    <div class="owned-banner">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      You have an active VIP subscription
+    </div>
+
+  </div>
+
+</div>
+
+<!-- Buy Modal -->
+<div class="modal-overlay" id="buyOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Buy Vault Units</div>
+      <button class="modal-close" data-close="buyOverlay">&times;</button>
+    </div>
+
+    <div class="stepper">
+      <button class="stepper-btn" id="buyMinus">−</button>
+      <div class="stepper-value" id="buyQty">2</div>
+      <button class="stepper-btn" id="buyPlus">+</button>
+    </div>
+
+    <div class="modal-row">
+      <span>Unit Price</span>
+      <span class="right">$19.23 <span class="fee-inline-buy">+ $0.38 fee</span></span>
+    </div>
+    <div class="modal-row">
+      <span>× <span id="buyQtyLabel">2</span> units</span>
+      <span class="right" id="buyEach">$19.61 each</span>
+    </div>
+    <div class="modal-row total">
+      <span>Total Cost</span>
+      <span class="right buy-total" id="buyTotal">$39.22</span>
+    </div>
+
+    <div class="wallet-box">
+      <span>Wallet Balance</span>
+      <strong id="walletBal">$202.09</strong>
+    </div>
+
+    <button class="confirm-btn confirm-buy" id="confirmBuy">Confirm Purchase</button>
+  </div>
+</div>
+
+<!-- Sell Modal -->
+<div class="modal-overlay" id="sellOverlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-title">Sell Vault Units</div>
+      <button class="modal-close" data-close="sellOverlay">&times;</button>
+    </div>
+
+    <div class="my-units-box">
+      <span>My Units</span>
+      <strong id="sellMyUnits">6</strong>
+    </div>
+
+    <div class="stepper">
+      <button class="stepper-btn" id="sellMinus">−</button>
+      <div class="stepper-value" id="sellQty">2</div>
+      <button class="stepper-btn" id="sellPlus">+</button>
+    </div>
+
+    <div class="modal-row">
+      <span>Unit Price</span>
+      <span class="right">$19.23 <span class="fee-inline-sell">− $0.38 fee</span></span>
+    </div>
+    <div class="modal-row">
+      <span>× <span id="sellQtyLabel">2</span> units</span>
+      <span class="right" id="sellEach">$18.85 each</span>
+    </div>
+    <div class="modal-row total">
+      <span>You Receive</span>
+      <span class="right sell-total" id="sellTotal">$37.70</span>
+    </div>
+
+    <button class="confirm-btn confirm-sell" id="confirmSell" style="margin-top:24px;">Confirm Sale</button>
+  </div>
+</div>
+
+<script>
+  // ---- Theme ----
+  const root = document.documentElement;
+  const themeToggle = document.getElementById('themeToggle');
+  const themeIcon = document.getElementById('themeIcon');
+  const themeLabel = document.getElementById('themeLabel');
+  const upgradeThemeToggle = document.getElementById('upgradeThemeToggle');
+  const upgradeThemeIcon = document.getElementById('upgradeThemeIcon');
+
+  const sunPath = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+  const moonPath = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+
+  function setTheme(theme) {
+    root.setAttribute('data-theme', theme);
+    localStorage.setItem('vault-theme', theme);
+    if (theme === 'dark') {
+      themeIcon.innerHTML = moonPath;
+      themeLabel.textContent = 'Dark';
+      upgradeThemeIcon.innerHTML = moonPath;
+    } else {
+      themeIcon.innerHTML = sunPath;
+      themeLabel.textContent = 'Light';
+      upgradeThemeIcon.innerHTML = sunPath;
+    }
+  }
+
+  const savedTheme = localStorage.getItem('vault-theme') || 'dark';
+  setTheme(savedTheme);
+
+  function toggleTheme() {
+    const current = root.getAttribute('data-theme');
+    setTheme(current === 'dark' ? 'light' : 'dark');
+  }
+  themeToggle.addEventListener('click', toggleTheme);
+  upgradeThemeToggle.addEventListener('click', toggleTheme);
+
+  // ---- Page switcher ----
+  const navVault = document.getElementById('navVault');
+  const navUpgrade = document.getElementById('navUpgrade');
+  const vaultPage = document.getElementById('vaultPage');
+  const upgradePage = document.getElementById('upgradePage');
+  const upgradeBack = document.getElementById('upgradeBack');
+
+  function showPage(page) {
+    if (page === 'vault') {
+      vaultPage.classList.add('active');
+      upgradePage.classList.remove('active');
+      navVault.classList.add('active');
+      navUpgrade.classList.remove('active');
+    } else {
+      upgradePage.classList.add('active');
+      vaultPage.classList.remove('active');
+      navUpgrade.classList.add('active');
+      navVault.classList.remove('active');
+    }
+  }
+  navVault.addEventListener('click', () => showPage('vault'));
+  navUpgrade.addEventListener('click', () => showPage('upgrade'));
+  upgradeBack.addEventListener('click', () => showPage('vault'));
+
+  // ---- Auto renew toggle ----
+  const autoRenewToggle = document.getElementById('autoRenewToggle');
+  autoRenewToggle.addEventListener('click', () => {
+    autoRenewToggle.classList.toggle('off');
+  });
+
+  // ---- Modal open/close ----
+  function openModal(id) { document.getElementById(id).classList.add('active'); }
+  function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+  document.getElementById('openBuy').addEventListener('click', () => openModal('buyOverlay'));
+  document.getElementById('openSell').addEventListener('click', () => openModal('sellOverlay'));
+
+  document.querySelectorAll('[data-close]').forEach(btn => {
+    btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close')));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.classList.remove('active');
+    });
+  });
+
+  // ---- Buy stepper logic ----
+  const unitPrice = 19.23;
+  const feeRate = 0.02;
+  let buyQty = 2;
+
+  function renderBuy() {
+    const each = unitPrice * (1 + feeRate);
+    const total = each * buyQty;
+    document.getElementById('buyQty').textContent = buyQty;
+    document.getElementById('buyQtyLabel').textContent = buyQty;
+    document.getElementById('buyEach').textContent = `$${each.toFixed(2)} each`;
+    document.getElementById('buyTotal').textContent = `$${total.toFixed(2)}`;
+  }
+  document.getElementById('buyPlus').addEventListener('click', () => { buyQty++; renderBuy(); });
+  document.getElementById('buyMinus').addEventListener('click', () => { if (buyQty > 1) buyQty--; renderBuy(); });
+  renderBuy();
+
+  // ---- Sell stepper logic ----
+  let sellQty = 2;
+  function renderSell() {
+    const each = unitPrice * (1 - feeRate);
+    const total = each * sellQty;
+    document.getElementById('sellQty').textContent = sellQty;
+    document.getElementById('sellQtyLabel').textContent = sellQty;
+    document.getElementById('sellEach').textContent = `$${each.toFixed(2)} each`;
+    document.getElementById('sellTotal').textContent = `$${total.toFixed(2)}`;
+  }
+  document.getElementById('sellPlus').addEventListener('click', () => {
+    const maxUnits = parseInt(document.getElementById('sellMyUnits').textContent, 10);
+    if (sellQty < maxUnits) sellQty++;
+    renderSell();
+  });
+  document.getElementById('sellMinus').addEventListener('click', () => { if (sellQty > 1) sellQty--; renderSell(); });
+  renderSell();
+
+  // ---- Confirm actions (demo behavior) ----
+  document.getElementById('confirmBuy').addEventListener('click', () => {
+    closeModal('buyOverlay');
+  });
+  document.getElementById('confirmSell').addEventListener('click', () => {
+    closeModal('sellOverlay');
+  });
+</script>
+
+</body>
+</html>

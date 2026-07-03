@@ -26,6 +26,89 @@ function StatTile({ label, value, color, tk, darkMode }) {
   )
 }
 
+// ── VAULT TRANSACTION HISTORY ─────────────────────────────────────────────
+function VaultTxHistory({ history, loading, darkMode, tk }) {
+  if (loading) return (
+    <div style={{ background: tk.card, border: `1px solid ${tk.cardBorder}`, borderRadius: 20, padding: 24, marginTop: 14, textAlign: 'center', color: tk.textMuted, fontSize: 13 }}>
+      Loading history...
+    </div>
+  )
+  return (
+    <div style={{ background: tk.card, border: `1px solid ${tk.cardBorder}`, borderRadius: 20, padding: 20, marginTop: 14 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, color: tk.text, marginBottom: 16 }}>Transaction History</div>
+      {history.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 24, color: tk.textMuted, fontSize: 13 }}>No vault transactions yet</div>
+      ) : (
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, minWidth: 420 }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${tk.cardBorder}` }}>
+                {['Type','Units','Price','Fee','Amount','Date'].map(h => (
+                  <th key={h} style={{ padding: '0 6px 10px', textAlign: h === 'Type' ? 'left' : 'right', fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', color: tk.textMuted, whiteSpace: 'nowrap' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {history.map((tx, i) => {
+                const isBuy   = tx.type === 'vault_buy'
+                const n       = tx.notes_parsed || {}
+                const units   = n.quantity  ?? '—'
+                const price   = n.unit_price ? `$${parseFloat(n.unit_price).toFixed(2)}`  : '—'
+                const fee     = n.fee        ? `$${parseFloat(n.fee).toFixed(2)}`          : '—'
+                const amount  = parseFloat(tx.amount || 0)
+                const dateStr = tx.created_at
+                  ? new Date(tx.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) + ' ' +
+                    new Date(tx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                  : '—'
+                const typeColor = isBuy ? '#f7931e' : '#16a34a'
+                const typeBg    = isBuy ? 'rgba(247,147,30,0.12)' : 'rgba(22,163,74,0.12)'
+                return (
+                  <tr key={i} style={{ borderBottom: `1px solid ${tk.cardBorder}` }}>
+                    <td style={{ padding: '13px 6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: typeBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {isBuy
+                            ? <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={typeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                            : <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke={typeColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="17 17 7 17 7 7"/></svg>
+                          }
+                        </div>
+                        <span style={{ fontWeight: 800, fontSize: 12, color: typeColor }}>{isBuy ? 'BUY' : 'SELL'}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '13px 6px', textAlign: 'right', color: tk.text, fontVariantNumeric: 'tabular-nums' }}>{units}</td>
+                    <td style={{ padding: '13px 6px', textAlign: 'right', color: tk.text, fontVariantNumeric: 'tabular-nums' }}>{price}</td>
+                    <td style={{ padding: '13px 6px', textAlign: 'right', color: tk.textMuted, fontVariantNumeric: 'tabular-nums' }}>{fee}</td>
+                    <td style={{ padding: '13px 6px', textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: isBuy ? '#f7931e' : '#16a34a' }}>
+                      {isBuy ? '-' : '+'}${amount.toFixed(2)}
+                    </td>
+                    <td style={{ padding: '13px 6px', textAlign: 'right', color: tk.textMuted, fontSize: 11, whiteSpace: 'nowrap' }}>{dateStr}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── TOP-LEVEL MODAL — must be outside VaultPage to prevent remount on state change ──
+function VaultModal({ title, onClose, children, tk }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: tk.card, borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 500, padding: '0 0 32px', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
+        <div style={{ width: 40, height: 4, borderRadius: 2, background: tk.cardBorder, margin: '14px auto 0' }} />
+        <div style={{ padding: '16px 20px', borderBottom: `1px solid ${tk.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 16, fontWeight: 800, color: tk.text }}>{title}</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color={tk.textMuted} /></button>
+        </div>
+        <div style={{ padding: '20px 20px 0' }}>{children}</div>
+      </div>
+    </div>
+  )
+}
+
 export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onBack }) {
   const tk = t(darkMode)
   const coins = parseInt(user?.coins ?? 0)
@@ -49,6 +132,11 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
   const [buyQty, setBuyQty]   = useState(1)
   const [sellQty, setSellQty] = useState(1)
   const [unitLoading, setUnitLoading] = useState(false)
+
+  // ── vault transaction history ─────────────────────────────────────────
+  const [vaultHistory, setVaultHistory]       = useState([])
+  const [loadingHistory, setLoadingHistory]   = useState(false)
+  const [prevVaultValue, setPrevVaultValue]   = useState(null)
 
   const [toast, setToast] = useState(null)
 
@@ -110,6 +198,20 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
             setTxFee(parseFloat(d.tx_fee ?? 2))
           }
         })
+        .catch(() => {})
+
+      // Load vault transaction history for this user
+      setLoadingHistory(true)
+      fetch(`${API}/vault/vault_history.php?user_id=${user.id}`)
+        .then(r => r.json())
+        .then(d => { if (d.success) setVaultHistory(d.transactions || []) })
+        .catch(() => {})
+        .finally(() => setLoadingHistory(false))
+
+      // Load yesterday's vault value for 24h change
+      fetch(`${API}/vault/stats.php?prev=1`)
+        .then(r => r.json())
+        .then(d => { if (d.success && d.prev_total_value != null) setPrevVaultValue(d.prev_total_value) })
         .catch(() => {})
     }
   }, [user?.id])
@@ -217,10 +319,13 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
   const canBuyQty      = Math.max(0, maxUnits - myUnits)
   const vaultStatus    = hasAllBadges ? 'Unlimited' : hasBadge ? `Basic (max ${basicLimit})` : 'No badge'
 
-  // ── window status ──────────────────────────────────────────────────────
+  // ── window status — use server settings (fixes Part 4 Bug 2) ─────────────
   const today       = new Date().getDate()
-  const windowOpen  = today >= 1 && today <= 25
-  const postPayout  = today >= 28
+  const openDay     = poolData?.settings?.open_day  ?? 1
+  const closeDay    = poolData?.settings?.close_day ?? 25
+  const distDay     = poolData?.settings?.dist_day  ?? 28
+  const windowOpen  = today >= openDay && today <= closeDay
+  const postPayout  = today >= distDay
   const myEarnings  = poolData?.my_earned ?? 0
 
   // ── fee/cost helpers ──────────────────────────────────────────────────
@@ -230,21 +335,13 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
   const sellNet     = (qty) => parseFloat((qty * unitPrice * (1 - feeRate)).toFixed(2))
   const sellFeeAmt  = (qty) => parseFloat((qty * unitPrice * feeRate).toFixed(2))
 
-  // ── modal helper ───────────────────────────────────────────────────────
-  function Modal({ title, onClose, children }) {
-    return (
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 1000 }}>
-        <div onClick={e => e.stopPropagation()} style={{ background: tk.card, borderRadius: '24px 24px 0 0', width: '100%', maxWidth: 500, padding: '0 0 32px', boxShadow: '0 -8px 40px rgba(0,0,0,0.2)' }}>
-          <div style={{ width: 40, height: 4, borderRadius: 2, background: tk.cardBorder, margin: '14px auto 0' }} />
-          <div style={{ padding: '16px 20px', borderBottom: `1px solid ${tk.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: 16, fontWeight: 800, color: tk.text }}>{title}</span>
-            <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={18} color={tk.textMuted} /></button>
-          </div>
-          <div style={{ padding: '20px 20px 0' }}>{children}</div>
-        </div>
-      </div>
-    )
-  }
+  // ── 24h change calculation ────────────────────────────────────────────
+  const currentVaultValue = totalUnits * unitPrice
+  const vaultChange24h    = prevVaultValue != null ? currentVaultValue - prevVaultValue : null
+  const vaultChangePct    = (prevVaultValue != null && prevVaultValue > 0)
+    ? ((vaultChange24h / prevVaultValue) * 100).toFixed(2)
+    : null
+  const changePositive    = vaultChange24h != null && vaultChange24h >= 0
 
   return (
     <div style={{ background: tk.bg, minHeight: '100%', paddingBottom: 30 }}>
@@ -337,32 +434,46 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
               <Minus size={15} /> Sell
             </button>
           </div>
-          <div style={{ textAlign: 'center', fontSize: 11, color: tk.textMuted, fontWeight: 500 }}>{txFee}% fee applies on all transactions — fee goes to vault pool</div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: tk.textMuted, fontWeight: 500 }}>2% fee applies on all transactions</div>
         </div>
 
         {/* ── Total Vault Value card ── */}
         <div style={{ background: darkMode ? 'linear-gradient(135deg,#162032,#0f1e30)' : 'linear-gradient(135deg,#1e293b,#0f172a)', border: `1px solid ${C.orange}40`, borderRadius: 18, padding: 18, marginTop: 14 }}>
           <div style={{ fontSize: 11, color: '#4B6080', fontWeight: 600, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>Total Vault Value</div>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ fontSize: 28, fontWeight: 800, color: '#F1F5F9' }}>
-              ${(totalUnits * unitPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 36, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.01em' }}>
+              ${currentVaultValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
-            {totalUnits > 0 && myUnits > 0 && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,111,0,0.15)', color: C.orange, padding: '4px 10px', borderRadius: 20, fontSize: 12, fontWeight: 700, border: `1px solid ${C.orange}30`, whiteSpace: 'nowrap' }}>
-                Your share: {((myUnits / totalUnits) * 100).toFixed(2)}%
+            {vaultChange24h != null && (
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                background: changePositive ? 'rgba(22,163,74,0.12)' : 'rgba(239,68,68,0.1)',
+                color: changePositive ? '#22c55e' : '#ef4444',
+                fontWeight: 700, fontSize: 13, padding: '7px 13px', borderRadius: 999,
+                whiteSpace: 'nowrap', border: `1px solid ${changePositive ? 'rgba(34,197,94,0.25)' : 'rgba(239,68,68,0.25)'}`,
+              }}>
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="currentColor">
+                  {changePositive
+                    ? <polygon points="12,4 20,18 4,18" />
+                    : <polygon points="12,20 20,6 4,6" />
+                  }
+                </svg>
+                {changePositive ? '' : '-'}
+                {Math.abs(vaultChange24h).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {' '}({Math.abs(parseFloat(vaultChangePct)).toFixed(2)}%) 24h
               </div>
             )}
           </div>
-          <div style={{ marginTop: 8, fontSize: 11, color: '#4B6080' }}>
-            {myUnits} of {totalUnits} total units
-          </div>
         </div>
+
+        {/* ── Vault Transaction History ── */}
+        <VaultTxHistory history={vaultHistory} loading={loadingHistory} darkMode={darkMode} tk={tk} />
 
       </div>
 
       {/* ── CONTRIBUTE XP MODAL ── */}
       {showContribModal && (
-        <Modal title="Contribute XP" onClose={() => { setShowContribModal(false); setContribAmount('') }}>
+        <VaultModal title="Contribute XP" onClose={() => { setShowContribModal(false); setContribAmount('') }} tk={tk}>
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <span style={{ fontSize: 12, color: tk.textMuted, fontWeight: 600 }}>Your XP Balance</span>
@@ -414,12 +525,12 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
             }}>
             {contribLoading ? 'Contributing...' : `Contribute ${parseInt(contribAmount) > 0 ? parseInt(contribAmount).toLocaleString() : ''} XP`}
           </button>
-        </Modal>
+        </VaultModal>
       )}
 
       {/* ── BUY UNITS MODAL ── */}
       {showBuyModal && (
-        <Modal title="Buy Vault Units" onClose={() => { setShowBuyModal(false); setBuyQty(1) }}>
+        <VaultModal title="Buy Vault Units" onClose={() => { setShowBuyModal(false); setBuyQty(1) }} tk={tk}>
           <div style={{ marginBottom: 16 }}>
             {/* Unit price + fee info */}
             <div style={{ background: darkMode ? 'rgba(255,255,255,0.04)' : '#F7F8FC', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
@@ -467,14 +578,14 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
             onClick={handleBuyUnits}
             disabled={unitLoading || buyCost(buyQty) > parseFloat(user?.usd_balance ?? 0)}
             style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: buyCost(buyQty) > parseFloat(user?.usd_balance ?? 0) ? (darkMode ? '#1C2A3A' : '#E2E8F0') : C.orange, color: buyCost(buyQty) > parseFloat(user?.usd_balance ?? 0) ? tk.textMuted : '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', opacity: unitLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
-            {unitLoading ? 'Buying...' : buyCost(buyQty) > parseFloat(user?.usd_balance ?? 0) ? 'Insufficient balance' : `Buy ${buyQty} Unit${buyQty > 1 ? 's' : ''} — $${buyCost(buyQty).toFixed(2)}`}
+            {unitLoading ? 'Buying...' : buyCost(buyQty) > parseFloat(user?.usd_balance ?? 0) ? 'Insufficient balance' : `Buy ${buyQty} Unit${buyQty > 1 ? 's' : ''}`}
           </button>
-        </Modal>
+        </VaultModal>
       )}
 
       {/* ── SELL UNITS MODAL ── */}
       {showSellModal && (
-        <Modal title="Sell Vault Units" onClose={() => { setShowSellModal(false); setSellQty(1) }}>
+        <VaultModal title="Sell Vault Units" onClose={() => { setShowSellModal(false); setSellQty(1) }} tk={tk}>
           <div style={{ marginBottom: 16 }}>
             {/* Fee breakdown */}
             <div style={{ background: darkMode ? 'rgba(255,255,255,0.04)' : '#F7F8FC', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
@@ -523,9 +634,9 @@ export default function VaultPage({ user, updateUser, darkMode, setDarkMode, onB
             onClick={handleSellUnits}
             disabled={unitLoading}
             style={{ width: '100%', padding: 14, borderRadius: 14, border: 'none', background: '#EF4444', color: '#fff', fontWeight: 800, fontSize: 14, cursor: 'pointer', opacity: unitLoading ? 0.7 : 1, fontFamily: 'inherit' }}>
-            {unitLoading ? 'Selling...' : `Sell ${sellQty} Unit${sellQty > 1 ? 's' : ''} — receive $${sellNet(sellQty).toFixed(2)}`}
+            {unitLoading ? 'Selling...' : `Sell ${sellQty} Unit${sellQty > 1 ? 's' : ''}`}
           </button>
-        </Modal>
+        </VaultModal>
       )}
     </div>
   )

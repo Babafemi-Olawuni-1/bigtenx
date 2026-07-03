@@ -1,10 +1,26 @@
 <?php
 // Auto-payout: run on the 28th of each month
-// Can also be triggered manually by admin
 require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
 
 $db = getDB();
+
+function getSetting($db, $key, $default) {
+    try { $s=$db->prepare("SELECT `value` FROM admin_settings WHERE `key`=? LIMIT 1"); $s->execute([$key]); $v=$s->fetchColumn(); return $v!==false?$v:$default; }
+    catch(Exception $e){return $default;}
+}
+function saveSetting($db,$key,$value){
+    try{$db->prepare("INSERT INTO admin_settings(`key`,`value`) VALUES(?,?) ON DUPLICATE KEY UPDATE `value`=?")->execute([$key,$value,$value]);}catch(Exception $e){}
+}
+
+// Ensure distribution_log exists
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS distribution_log (
+        id INT AUTO_INCREMENT PRIMARY KEY, cycle VARCHAR(7) NOT NULL,
+        pool_amount DECIMAL(12,4) NOT NULL DEFAULT 0, users_paid INT NOT NULL DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(cycle)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+} catch (Exception $e) {}
 
 function getSetting($db, $key, $default) {
     try { $s=$db->prepare("SELECT `value` FROM admin_settings WHERE `key`=? LIMIT 1"); $s->execute([$key]); $v=$s->fetchColumn(); return $v!==false?$v:$default; }
@@ -82,6 +98,12 @@ try {
 
     // Reset distribution pool
     saveSetting($db, 'month_revenue', 0);
+
+    // Log distribution for history
+    try {
+        $db->prepare("INSERT INTO distribution_log (cycle, pool_amount, users_paid) VALUES (?,?,?)")
+           ->execute([$cycle, $distPool, $paid]);
+    } catch (Exception $e) {}
 
     $db->commit();
     echo json_encode(['success'=>true,'message'=>"Distributed \${$distPool} to {$paid} users for cycle {$cycle}",'users_paid'=>$paid,'amount_distributed'=>$distPool]);

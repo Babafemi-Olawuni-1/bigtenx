@@ -16,6 +16,8 @@ try {
                COALESCE(account_status, 1)  AS account_status
         FROM users WHERE id = ? LIMIT 1
     ");
+    // Force fresh read — bypass any query cache
+    $db->query("SELECT SLEEP(0)");
     $stmt->execute([$user_id]);
     $wallet = $stmt->fetch(PDO::FETCH_ASSOC);
 

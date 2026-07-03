@@ -31,8 +31,10 @@ function StatCard({ label, value, color, icon: Icon }) {
           {label}
         </div>
         <div style={{ 
-          fontSize: 15, fontWeight: 900, color: '#001F54', 
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' 
+          fontSize: 14, fontWeight: 900, color: '#001F54', 
+          overflow: 'hidden', textOverflow: 'ellipsis', 
+          whiteSpace: 'nowrap', maxWidth: '100%',
+          display: 'block'
         }}>
           {value}
         </div>
