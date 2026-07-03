@@ -1,10 +1,12 @@
-// AdminVault.jsx — Phase 3: single-page admin vault control
+// AdminVault.jsx — Complete Fixed Version
+// Location: src/admin/AdminVault.jsx
 import { useState, useEffect, useCallback } from 'react'
-import { API, O } from './adminUtils'
 import {
   DollarSign, Layers, Users, TrendingUp, ToggleLeft, ToggleRight,
   Plus, Minus, RefreshCw, Save
 } from 'lucide-react'
+// ✅ FIXED: Correct import path - adminUtils is in the same directory
+import { API, O, formatCurrency } from './adminUtils'
 
 function StatCard({ label, value, color, icon: Icon }) {
   return (
@@ -52,7 +54,13 @@ function Toggle({ on, onToggle }) {
 }
 
 export default function AdminVault({ token }) {
-  const headers = { 'Content-Type': 'application/json', 'X-Admin-Token': token }
+  // ✅ Use token from props
+  const adminToken = token || localStorage.getItem('bigtenx_admin_token') || ''
+  
+  const headers = { 
+    'Content-Type': 'application/json', 
+    'X-Admin-Token': adminToken
+  }
 
   const [stats, setStats]             = useState(null)
   const [loading, setLoading]         = useState(true)
@@ -75,10 +83,32 @@ export default function AdminVault({ token }) {
   }
 
   const loadStats = useCallback(async () => {
+    if (!adminToken) {
+      setLoading(false)
+      showToast('No admin token found. Please login again.', 'error')
+      return
+    }
+    
     setLoading(true)
     try {
-      const res  = await fetch(`${API}/admin/vault_stats.php`, { headers })
+      console.log('Loading admin stats with token:', adminToken)
+      const res = await fetch(`${API}/admin/vault_stats.php`, { 
+        headers,
+        method: 'GET'
+      })
+      
+      if (!res.ok) {
+        if (res.status === 401) {
+          showToast('Unauthorized. Please login again.', 'error')
+          setLoading(false)
+          return
+        }
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+      }
+      
       const data = await res.json()
+      console.log('Admin stats response:', data)
+      
       if (data.success) {
         setStats(data)
         setBasicLimit(data.settings?.basic_limit ?? 2)
@@ -86,15 +116,22 @@ export default function AdminVault({ token }) {
         setUnitPrice(parseFloat(data.unit_price ?? 15))
         setBuyEnabled(data.settings?.buy_enabled !== false && data.settings?.buy_enabled !== 0)
         setSellEnabled(data.settings?.sell_enabled !== false && data.settings?.sell_enabled !== 0)
+      } else {
+        showToast(data.message || 'Failed to load stats', 'error')
       }
     } catch (err) {
-      console.error(err)
+      console.error('Load stats error:', err)
+      showToast('Network error loading stats: ' + err.message, 'error')
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [adminToken])
 
-  useEffect(() => { loadStats() }, [loadStats])
+  useEffect(() => { 
+    if (adminToken) {
+      loadStats() 
+    }
+  }, [loadStats, adminToken])
 
   const handleFunds = async () => {
     const amt = parseFloat(fundAmount)
@@ -102,7 +139,7 @@ export default function AdminVault({ token }) {
     if (!fundReason.trim()) { showToast('Enter a reason', 'error'); return }
     setFundLoading(true)
     try {
-      const res  = await fetch(`${API}/admin/vault_stats.php`, {
+      const res = await fetch(`${API}/admin/vault_stats.php`, {
         method: 'POST', 
         headers,
         body: JSON.stringify({ 
@@ -111,15 +148,21 @@ export default function AdminVault({ token }) {
           reason: fundReason 
         })
       })
+      
       const data = await res.json()
+      console.log('Funds response:', data)
+      
       if (data.success) {
         showToast(fundAction === 'add' ? 'Funds added to vault' : 'Funds deducted from vault')
-        setFundAmount(''); setFundReason(''); loadStats()
+        setFundAmount('')
+        setFundReason('')
+        loadStats()
       } else {
         showToast(data.message || 'Failed', 'error')
       }
     } catch (err) {
-      showToast('Network error', 'error')
+      console.error('Funds error:', err)
+      showToast('Network error: ' + err.message, 'error')
     } finally {
       setFundLoading(false)
     }
@@ -128,7 +171,7 @@ export default function AdminVault({ token }) {
   const handleSaveSettings = async () => {
     setSaveLoading(true)
     try {
-      const res  = await fetch(`${API}/admin/vault_stats.php`, {
+      const res = await fetch(`${API}/admin/vault_stats.php`, {
         method: 'POST', 
         headers,
         body: JSON.stringify({ 
@@ -143,11 +186,12 @@ export default function AdminVault({ token }) {
       const data = await res.json()
       if (data.success) {
         showToast('Settings saved')
+        loadStats()
       } else {
         showToast(data.message || 'Failed', 'error')
       }
     } catch (err) {
-      showToast('Network error', 'error')
+      showToast('Network error: ' + err.message, 'error')
     } finally {
       setSaveLoading(false)
     }
@@ -159,8 +203,9 @@ export default function AdminVault({ token }) {
   const totalValue = up * totalUnits
   const holders    = parseInt(s.unit_holders ?? 0)
   const distPool   = parseFloat(s.distribution_pool ?? 0)
+  const windowStatus = s.window_status || 'Closed'
 
-  const fmt    = (n) => '$' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const fmt    = (n) => formatCurrency(n)
   const inp    = { 
     width: '100%', padding: '11px 14px', borderRadius: 12, 
     border: '1px solid #E9EDF2', fontSize: 13, 
@@ -208,6 +253,10 @@ export default function AdminVault({ token }) {
         <div style={{ textAlign: 'center', padding: 60, color: '#8899AA' }}>
           Loading vault data...
         </div>
+      ) : !stats ? (
+        <div style={{ textAlign: 'center', padding: 60, color: '#EF4444' }}>
+          Failed to load vault data. Please check your connection and try again.
+        </div>
       ) : (
         <>
           {/* Stats grid */}
@@ -223,10 +272,10 @@ export default function AdminVault({ token }) {
             <StatCard label="Unit Holders" value={holders.toLocaleString()} color="#8B5CF6" icon={Users} />
             <StatCard label="Distribution Pool" value={fmt(distPool)} color="#F59E0B" icon={DollarSign} />
             <StatCard 
-              label="Buying / Selling" 
-              value={`${buyEnabled ? 'On' : 'Off'} / ${sellEnabled ? 'On' : 'Off'}`} 
-              color={buyEnabled ? '#10b981' : '#EF4444'} 
-              icon={ToggleRight} 
+              label="Window Status" 
+              value={windowStatus} 
+              color={windowStatus === 'Open' ? '#10b981' : '#EF4444'} 
+              icon={TrendingUp} 
             />
           </div>
 

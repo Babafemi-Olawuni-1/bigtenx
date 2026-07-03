@@ -1,4 +1,5 @@
 // Shared constants and helpers for admin dashboard
+// Location: src/admin/adminUtils.js
 
 export const O  = '#FF6F00'
 export const O2 = '#FF8C00'
@@ -24,4 +25,17 @@ export function getTheme(darkMode) {
     muted:  darkMode ? 'rgba(255,255,255,0.38)' : '#8899AA',
     border: darkMode ? 'rgba(255,111,0,0.18)'   : 'rgba(0,31,84,0.07)',
   }
+}
+
+// ── Format currency helper ──────────────────────────────────────────────
+export function formatCurrency(value) {
+    if (!value || value === 0) return '$0.00';
+    
+    const absValue = Math.abs(value);
+    if (absValue >= 1e12) return `$${(value / 1e12).toFixed(2)}T`;
+    if (absValue >= 1e9) return `$${(value / 1e9).toFixed(2)}B`;
+    if (absValue >= 1e6) return `$${(value / 1e6).toFixed(2)}M`;
+    if (absValue >= 1e3) return `$${(value / 1e3).toFixed(2)}K`;
+    
+    return `$${value.toFixed(2)}`;
 }

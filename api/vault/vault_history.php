@@ -3,22 +3,43 @@ require_once __DIR__ . '/../config/cors.php';
 require_once __DIR__ . '/../config/db.php';
 
 $userId = (int)($_GET['user_id'] ?? 0);
-if (!$userId) { echo json_encode(['success'=>false,'message'=>'user_id required']); exit; }
+if (!$userId) { 
+    echo json_encode(['success' => false, 'message' => 'user_id required']); 
+    exit; 
+}
 
 $db = getDB();
 
 try {
-    // Check notes column exists
+    // Check if wallet_transactions table exists
+    $tableExists = false;
+    try {
+        $result = $db->query("SHOW TABLES LIKE 'wallet_transactions'");
+        $tableExists = $result->rowCount() > 0;
+    } catch (Exception $e) {
+        $tableExists = false;
+    }
+
+    if (!$tableExists) {
+        echo json_encode(['success' => true, 'transactions' => [], 'message' => 'No transactions yet']);
+        exit;
+    }
+
+    // Check if notes column exists
     $hasNotes = true;
-    try { $db->query("SELECT notes FROM wallet_transactions LIMIT 1"); }
-    catch (Exception $e) { $hasNotes = false; }
+    try { 
+        $db->query("SELECT notes FROM wallet_transactions LIMIT 1"); 
+    } catch (Exception $e) { 
+        $hasNotes = false; 
+    }
 
     $notesSel = $hasNotes ? ", notes" : "";
 
+    // Get transactions for this user
     $stmt = $db->prepare("
         SELECT id, type, amount, status, reference, created_at {$notesSel}
         FROM wallet_transactions
-        WHERE user_id = ? AND type IN ('vault_buy','vault_sell','vault_distribution')
+        WHERE user_id = ? AND type IN ('vault_buy', 'vault_sell', 'vault_distribution')
         ORDER BY created_at DESC
         LIMIT 50
     ");
